@@ -89,7 +89,7 @@ export default function CopyPromptButton({
       </button>
 
       <p className="text-center text-xs text-[#666680] font-mono mt-2">
-         ถูกคัดลอกไปแล้ว {copyCount} ครั้ง
+        📋 ถูกคัดลอกไปแล้ว {copyCount} ครั้ง
       </p>
     </div>
   )

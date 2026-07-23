@@ -4,11 +4,22 @@ export default async function PopularPromptsPage() {
   const supabase = await createClient()
 
   const { data: rows, error } = await supabase
-    .from('popular_prompts')
-    .select('*')
-    .limit(20)
+    .rpc('get_popular_prompts', { result_limit: 20 })
 
-  const prompts = (rows ?? []).map((r: any) => ({
+  type PromptData = {
+    prompt_id: string
+    title: string
+    prompt_text: string
+    cover_image_url: string | null
+    view_count: number
+    like_count: number
+    copy_count: number
+    copy_uses: number
+    category_name: string | null
+    media_type_name: string | null
+  }
+
+  const prompts: PromptData[] = (rows ?? []).map((r: any) => ({
     prompt_id: r.prompt_id,
     title: r.title,
     prompt_text: r.prompt_text,
@@ -45,7 +56,7 @@ export default async function PopularPromptsPage() {
       )}
 
       <div className="flex flex-col gap-2.5">
-        {prompts.map((p, idx) => (
+        {prompts.map((p, idx: number) => (
           <a
             key={p.prompt_id}
             href={`/prompts/${p.prompt_id}`}
