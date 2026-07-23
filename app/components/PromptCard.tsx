@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import LikeButton from '@/app/components/LikeButton'
 
 type PromptCardProps = {
   prompt: {
@@ -10,6 +11,7 @@ type PromptCardProps = {
     cover_image_url: string | null
     view_count: number
     like_count: number
+    copy_count?: number
     categories: { name: string } | null
     media_types: { name: string } | null
   }
@@ -55,7 +57,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
           </div>
         )}
 
-        {/* overlay ไล่สีเข้มด้านล่างภาพ เพื่อให้ปุ่ม copy อ่านง่าย */}
+        {/* overlay ไล่สีเข้มด้านล่างภาพ เพื่อให้ปุ่มอ่านง่าย */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
         {/* ปุ่ม copy ด่วน มุมขวาบนของภาพ */}
@@ -107,9 +109,15 @@ export default function PromptCard({ prompt }: PromptCardProps) {
 
         {/* แถวล่าง: สถิติ + ปุ่มดูรายละเอียด */}
         <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-[#232336]">
-          <div className="flex gap-3 text-xs text-[#666680] font-mono">
+          <div className="flex items-center gap-3 text-xs text-[#666680] font-mono">
             <span>👁 {prompt.view_count}</span>
-            <span>❤ {prompt.like_count}</span>
+            {typeof prompt.copy_count === 'number' && <span>📋 {prompt.copy_count}</span>}
+            <LikeButton
+              promptId={prompt.prompt_id}
+              initialLikeCount={prompt.like_count}
+              insideLink
+              size={13}
+            />
           </div>
 
           <span className="text-xs font-mono text-cyan-400/80 group-hover:text-cyan-300 flex items-center gap-1 transition-colors">

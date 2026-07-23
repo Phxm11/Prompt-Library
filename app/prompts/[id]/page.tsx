@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ImageGallery from '@/app/components/ImageGallery'
 import CopyPromptButton from '@/app/components/CopyPromptButton'
+import StarRating from '@/app/components/StarRating'
+import ReviewSection from '@/app/components/ReviewSection'
+import LikeButton from '@/app/components/LikeButton'
 
 export default async function PromptDetailPage({
   params,
@@ -30,6 +33,16 @@ export default async function PromptDetailPage({
 
   supabase.rpc('increment_view_count', { prompt_id_input: id })
 
+  // บันทึก view ลง usage_history ด้วย (เพื่อให้หน้าประวัติการใช้งานมีข้อมูลจริง)
+  // fire-and-forget ไม่ await เพื่อไม่ให้หน้าเว็บโหลดช้า
+  supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.from('usage_history').insert({
+      prompt_id: id,
+      user_id: user?.id ?? null,
+      action_type: 'view',
+    })
+  })
+
   const sortedExamples = (prompt.prompt_examples ?? []).sort(
     (a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order
   )
@@ -47,7 +60,6 @@ export default async function PromptDetailPage({
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-fuchsia-500/15 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="relative max-w-5xl mx-auto px-6 py-8">
-        
         <a
           href="/"
           className="text-sm text-cyan-400 hover:text-cyan-300 font-mono transition-colors"
@@ -87,10 +99,22 @@ export default async function PromptDetailPage({
               {prompt.title}
             </h1>
 
-            <div className="flex gap-4 text-xs text-[#666680] font-mono mb-6">
+            {/* คะแนนเฉลี่ย */}
+            <div className="flex items-center gap-2 mb-3">
+              <StarRating value={prompt.average_rating ?? 0} readOnly size={16} />
+              <span className="text-xs text-[#8888a0] font-mono">
+                {prompt.average_rating > 0 ? prompt.average_rating.toFixed(1) : 'ยังไม่มีคะแนน'}
+                {prompt.review_count > 0 && ` · ${prompt.review_count} รีวิว`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-4 text-xs text-[#666680] font-mono mb-6">
               <span>👁 {prompt.view_count} ครั้งที่ดู</span>
-              <span>📋 {prompt.copy_count} ครั้งที่คัดลอก</span>
-              <span>❤ {prompt.like_count} ถูกใจ</span>
+              <LikeButton
+                promptId={prompt.prompt_id}
+                initialLikeCount={prompt.like_count}
+                size={16}
+              />
             </div>
 
             <div className="bg-[#12121c] border border-[#232336] rounded-lg p-4 mb-3">
@@ -102,7 +126,11 @@ export default async function PromptDetailPage({
               </p>
             </div>
 
-            <CopyPromptButton promptId={prompt.prompt_id} promptText={prompt.prompt_text} />
+            <CopyPromptButton
+              promptId={prompt.prompt_id}
+              promptText={prompt.prompt_text}
+              initialCopyCount={prompt.copy_count}
+            />
 
             {prompt.negative_prompt && (
               <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg p-4 mt-4">
@@ -150,6 +178,9 @@ export default async function PromptDetailPage({
             )}
           </div>
         </div>
+
+        {/* ระบบ Rating/Comment */}
+        <ReviewSection promptId={prompt.prompt_id} />
       </div>
     </div>
   )

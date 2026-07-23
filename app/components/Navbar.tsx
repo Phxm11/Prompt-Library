@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import SearchBar from '@/app/components/SearchBar'
 
 const menuItems = [
   { label: 'หมวดหมู่', href: '/' },
+  { label: 'ยอดนิยม', href: '/popular' },
   { label: 'ประเภทสื่อ', href: '/media-types' },
   { label: 'โมเดล AI', href: '/ai-models' },
   { label: 'รายการโปรด', href: '/favorites' },
@@ -25,7 +27,7 @@ export default function Navbar() {
           Prompt Library
         </Link>
 
-        <nav className="flex gap-1 overflow-x-auto">
+        <nav className="flex items-center gap-1 overflow-x-auto">
           {menuItems.map((item) => {
             const isActive =
               item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
@@ -44,6 +46,17 @@ export default function Navbar() {
               </Link>
             )
           })}
+
+          <div className="ml-2 hidden md:block">
+            <SearchBar compact />
+          </div>
+
+          <Link
+            href="/prompts/new"
+            className="ml-2 px-3.5 py-2 rounded-lg text-sm font-mono whitespace-nowrap bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-400/50 hover:bg-fuchsia-500/20 hover:shadow-[0_0_12px_rgba(255,62,200,0.3)] transition-all"
+          >
+            + เพิ่ม Prompt
+          </Link>
         </nav>
       </div>
     </header>
