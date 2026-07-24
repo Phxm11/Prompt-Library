@@ -136,9 +136,19 @@ export default function PromptForm({
           .eq('prompt_id', promptId)
         if (updateError) throw updateError
       } else {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user) {
+          setError('กรุณาเข้าสู่ระบบก่อนเพิ่ม Prompt')
+          setSubmitting(false)
+          return
+        }
+
         const { data: inserted, error: insertError } = await supabase
           .from('prompts')
-          .insert(payload)
+          .insert({ ...payload, user_id: user.id })
           .select('prompt_id')
           .single()
         if (insertError) throw insertError

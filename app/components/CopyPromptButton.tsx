@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 
 type CopyPromptButtonProps = {
   promptId: string
@@ -17,25 +18,34 @@ export default function CopyPromptButton({
 }: CopyPromptButtonProps) {
   const [copied, setCopied] = useState(false)
   const [copyCount, setCopyCount] = useState(initialCopyCount)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
+      setIsLoggedIn(Boolean(user))
+    })
+  }, [supabase])
+
   async function handleCopy() {
+    // ยังไม่ login -> พาไปหน้า login แทนการคัดลอก
+    if (!isLoggedIn) {
+      router.push(`/login?next=/prompts/${promptId}`)
+      return
+    }
+
     try {
       await navigator.clipboard.writeText(promptText)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
 
-      // เพิ่มตัวเลขบนหน้าจอทันที ไม่ต้องรอ server ตอบกลับ (optimistic update)
       setCopyCount((prev) => prev + 1)
 
-      // นับจำนวนครั้งที่ copy แบบ atomic (อัปเดตตัวเลขสรุปในตาราง prompts)
       await supabase.rpc('increment_copy_count', { prompt_id_input: promptId })
 
-      // บันทึกลง usage_history ด้วย เพื่อให้หน้าประวัติ/ยอดนิยมมีข้อมูลจริง
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data } = await supabase.auth.getUser()
+      const user: User | null = data.user
 
       await supabase.from('usage_history').insert({
         prompt_id: promptId,
@@ -43,14 +53,14 @@ export default function CopyPromptButton({
         action_type: 'copy',
       })
 
-      // sync ตัวเลขอื่นๆ ในหน้า (เช่นแถวสถิติ) ให้ตรงกับ database จริง
       router.refresh()
     } catch (err) {
       console.error('Copy failed:', err)
-      // ถ้า error ให้ลดตัวเลขที่ optimistic เพิ่มไปคืน เพราะไม่สำเร็จจริง
       setCopyCount((prev) => Math.max(prev - 1, 0))
     }
   }
+
+  const locked = isLoggedIn === false
 
   return (
     <div>
@@ -59,6 +69,8 @@ export default function CopyPromptButton({
         className={`group w-full py-3 rounded-lg font-mono text-sm font-medium border transition-all flex items-center justify-center gap-2 ${
           copied
             ? 'bg-emerald-500/10 text-emerald-300 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
+            : locked
+            ? 'bg-[#12121c] text-[#8888a0] border-[#232336] hover:border-cyan-400/40 hover:text-cyan-300'
             : 'bg-cyan-500/10 text-cyan-300 border-cyan-400/60 hover:bg-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]'
         }`}
       >
@@ -68,6 +80,14 @@ export default function CopyPromptButton({
               <path d="M20 6 9 17l-5-5" />
             </svg>
             คัดลอกแล้ว
+          </>
+        ) : locked ? (
+          <>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="4" y="10" width="16" height="10" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            </svg>
+            เข้าสู่ระบบเพื่อคัดลอก
           </>
         ) : (
           <>

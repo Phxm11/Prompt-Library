@@ -4,6 +4,7 @@ import Link from 'next/link'
 const actionLabel: Record<string, string> = {
   view: 'ดูรายละเอียด',
   copy: 'คัดลอก prompt',
+  like: 'ถูกใจ / บันทึกรายการโปรด',
   use: 'ใช้งาน',
   download: 'ดาวน์โหลด',
 }

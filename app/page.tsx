@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import PromptCard from '@/app/components/PromptCard'
 import CategoryFilter from '@/app/components/CategoryFilter'
+import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
+
+const PAGE_SIZE = 12
 
 export default async function HomePage({
   searchParams,
@@ -17,26 +19,32 @@ export default async function HomePage({
     .eq('is_active', true)
     .order('sort_order')
 
-  // สร้าง query สำหรับ prompts
+  // หา category_id จาก slug (ถ้ามีการ filter)
+  const matchedCategory = category
+    ? categories?.find((c) => c.slug === category)
+    : undefined
+  const categoryId = matchedCategory?.category_id ?? null
+
+  // ดึงเฉพาะหน้าแรก (12 รายการ) พร้อมนับจำนวนทั้งหมดที่ตรงเงื่อนไข
+  // เพื่อรู้ว่ายังมีข้อมูลให้โหลดเพิ่มไหม (infinite scroll)
   let query = supabase
     .from('prompts')
-    .select('*, categories(name), media_types(name)')
+    .select('*, categories(name), media_types(name)', { count: 'exact' })
     .eq('is_public', true)
     .order('created_at', { ascending: false })
+    .order('prompt_id', { ascending: true })
+    .range(0, PAGE_SIZE - 1)
 
-  // ถ้ามี filter หมวดหมู่ ต้องหา category_id จาก slug ก่อน
-  if (category) {
-    const matchedCategory = categories?.find((c) => c.slug === category)
-    if (matchedCategory) {
-      query = query.eq('category_id', matchedCategory.category_id)
-    }
+  if (categoryId) {
+    query = query.eq('category_id', categoryId)
   }
 
-  const { data: prompts, error } = await query
+  const { data: prompts, count, error } = await query
+
+  const hasMore = (count ?? 0) > PAGE_SIZE
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
-      {/* พื้นผิว grid บางๆ แบบ HUD ให้ความรู้สึก tech-lab */}
       <div
         className="absolute inset-0 opacity-[0.07] pointer-events-none"
         style={{
@@ -45,8 +53,6 @@ export default async function HomePage({
           backgroundSize: '48px 48px',
         }}
       />
-
-      {/* แสง glow ลอยที่มุมบน ให้บรรยากาศ ambient */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute -top-20 right-0 w-96 h-96 bg-fuchsia-500/20 rounded-full blur-[120px] pointer-events-none" />
 
@@ -82,10 +88,16 @@ export default async function HomePage({
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
-          {prompts?.map((prompt) => (
-            <PromptCard key={prompt.prompt_id} prompt={prompt} />
-          ))}
+        <div className="mt-6">
+          {/* key เปลี่ยนตาม category ทำให้ component รีเซ็ต state ใหม่หมด
+              เวลาเปลี่ยนหมวดหมู่ (ไม่ต้องเขียน logic reset เอง) */}
+          <PromptInfiniteGrid
+            key={categoryId ?? 'all'}
+            initialPrompts={prompts ?? []}
+            initialHasMore={hasMore}
+            mode="browse"
+            categoryId={categoryId}
+          />
         </div>
       </div>
     </div>

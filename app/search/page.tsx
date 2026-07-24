@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import PromptCard from '@/app/components/PromptCard'
+import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
 import SearchBar from '@/app/components/SearchBar'
+
+const PAGE_SIZE = 12
 
 export default async function SearchPage({
   searchParams,
@@ -12,22 +14,24 @@ export default async function SearchPage({
   const supabase = await createClient()
 
   let prompts: any[] = []
+  let hasMore = false
   let error: string | null = null
 
   if (query) {
-    // websearch_to_tsquery รองรับการพิมพ์แบบธรรมชาติ เช่น
-    // ใส่วลีในเครื่องหมายคำพูด หรือใช้ - นำหน้าคำที่ไม่ต้องการ
-    const { data, error: searchError } = await supabase
+    const { data, count, error: searchError } = await supabase
       .from('prompts')
-      .select('*, categories(name), media_types(name)')
+      .select('*, categories(name), media_types(name)', { count: 'exact' })
       .eq('is_public', true)
       .textSearch('search_vector', query, { type: 'websearch', config: 'simple' })
       .order('created_at', { ascending: false })
+      .order('prompt_id', { ascending: true })
+      .range(0, PAGE_SIZE - 1)
 
     if (searchError) {
       error = searchError.message
     } else {
       prompts = data ?? []
+      hasMore = (count ?? 0) > PAGE_SIZE
     }
   }
 
@@ -55,7 +59,7 @@ export default async function SearchPage({
 
       {query && (
         <p className="text-[#666680] text-sm font-mono mb-4">
-          ผลการค้นหาสำหรับ "<span className="text-cyan-300">{query}</span>" — พบ {prompts.length} รายการ
+          ผลการค้นหาสำหรับ "<span className="text-cyan-300">{query}</span>"
         </p>
       )}
 
@@ -71,11 +75,15 @@ export default async function SearchPage({
         </p>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {prompts.map((prompt) => (
-          <PromptCard key={prompt.prompt_id} prompt={prompt} />
-        ))}
-      </div>
+      {query && !error && prompts.length > 0 && (
+        <PromptInfiniteGrid
+          key={query}
+          initialPrompts={prompts}
+          initialHasMore={hasMore}
+          mode="search"
+          query={query}
+        />
+      )}
     </div>
   )
 }

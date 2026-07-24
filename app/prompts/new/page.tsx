@@ -1,8 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import PromptForm from '@/app/components/PromptForm'
 
 export default async function NewPromptPage() {
   const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login?next=/prompts/new')
+  }
 
   const [{ data: categories }, { data: mediaTypes }, { data: aiModels }] = await Promise.all([
     supabase.from('categories').select('category_id, name').eq('is_active', true).order('sort_order'),

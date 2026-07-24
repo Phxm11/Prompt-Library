@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import PromptForm from '@/app/components/PromptForm'
 
 export default async function EditPromptPage({
@@ -9,6 +9,14 @@ export default async function EditPromptPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect(`/login?next=/prompts/${id}/edit`)
+  }
 
   const [{ data: categories }, { data: mediaTypes }, { data: aiModels }] = await Promise.all([
     supabase.from('categories').select('category_id, name').eq('is_active', true).order('sort_order'),
@@ -27,6 +35,11 @@ export default async function EditPromptPage({
     .single()
 
   if (error || !prompt) notFound()
+
+  // กันคนอื่นแก้ prompt ที่ไม่ใช่ของตัวเอง แม้จะเดา URL ถูกก็ตาม
+  if (prompt.user_id !== user.id) {
+    redirect(`/prompts/${id}`)
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
