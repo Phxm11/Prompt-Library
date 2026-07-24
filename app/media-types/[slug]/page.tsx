@@ -34,7 +34,6 @@ export default async function MediaTypeDetailPage({
 
       <h1
         className="text-3xl font-bold mt-4 mb-8 text-[#f2f2f7]"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
         {mediaType.name}
       </h1>

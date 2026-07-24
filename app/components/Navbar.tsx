@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import SearchBar from '@/app/components/SearchBar'
+import Icon from '@/app/components/Icon'
 
 const primaryItems = [
   { label: 'หมวดหมู่', href: '/' },
@@ -82,13 +83,21 @@ export default function Navbar() {
         : 'text-[#8888a0] hover:text-cyan-300 hover:bg-cyan-500/5'
     }`
 
+  const navIcon = (href: string) => {
+    if (href === '/') return <Icon name="home" size={14} />
+    if (href === '/popular') return <Icon name="star" size={14} />
+    if (href === '/favorites') return <Icon name="heart" size={14} />
+    if (href === '/media-types') return <Icon name="grid" size={14} />
+    if (href === '/ai-models') return <Icon name="cpu" size={14} />
+    return <Icon name="clock" size={14} />
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-[#0a0a0f]/90 backdrop-blur border-b border-[#232336]">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center gap-4">
         <Link
           href="/"
           className="text-lg font-bold bg-gradient-to-r from-cyan-300 to-fuchsia-400 bg-clip-text text-transparent shrink-0"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           Prompt Library
         </Link>
@@ -97,7 +106,7 @@ export default function Navbar() {
         <nav className="hidden lg:flex items-center gap-1 shrink-0">
           {primaryItems.map((item) => (
             <Link key={item.href} href={item.href} className={linkClass(isActive(item.href))}>
-              {item.label}
+              <span className="flex items-center gap-1.5">{navIcon(item.href)}{item.label}</span>
             </Link>
           ))}
 
@@ -134,7 +143,7 @@ export default function Navbar() {
                         : 'text-[#c8c8d4] hover:text-cyan-300 hover:bg-cyan-500/5'
                     }`}
                   >
-                    {item.label}
+                    <span className="flex items-center gap-2">{navIcon(item.href)}{item.label}</span>
                   </Link>
                 ))}
               </div>
@@ -160,6 +169,14 @@ export default function Navbar() {
           {!loadingUser && (
             <>
               {email ? (
+                <>
+                <Link
+                  href="/profile"
+                  className="px-3.5 py-2 rounded-lg text-sm font-mono whitespace-nowrap bg-[#12121c] text-[#c8c8d4] border border-[#232336] hover:border-cyan-400/50 hover:text-cyan-300 transition-all"
+                  title={email}
+                >
+                  Profile
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-3.5 py-2 rounded-lg text-sm font-mono whitespace-nowrap bg-[#12121c] text-[#c8c8d4] border border-[#232336] hover:border-fuchsia-400/50 hover:text-fuchsia-300 transition-all"
@@ -167,6 +184,7 @@ export default function Navbar() {
                 >
                   ออกจากระบบ
                 </button>
+                </>
               ) : (
                 <Link
                   href="/login"
@@ -184,7 +202,7 @@ export default function Navbar() {
       <div className="lg:hidden border-t border-[#232336] px-6 py-2 flex gap-1 overflow-x-auto">
         {[...primaryItems, ...moreItems].map((item) => (
           <Link key={item.href} href={item.href} className={linkClass(isActive(item.href))}>
-            {item.label}
+            <span className="flex items-center gap-1.5">{navIcon(item.href)}{item.label}</span>
           </Link>
         ))}
       </div>

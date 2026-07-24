@@ -36,7 +36,6 @@ export default async function NewPromptPage() {
         </p>
         <h1
           className="text-3xl font-bold mb-8 text-[#f2f2f7]"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           เพิ่ม Prompt ใหม่
         </h1>

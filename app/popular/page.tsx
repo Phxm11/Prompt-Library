@@ -39,7 +39,6 @@ export default async function PopularPromptsPage() {
       </p>
       <h1
         className="text-3xl font-bold mb-1 text-[#f2f2f7]"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
         ยอดนิยม
       </h1>

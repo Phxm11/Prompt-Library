@@ -63,7 +63,6 @@ export default async function HomePage({
           </p>
           <h1
             className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-300 via-cyan-200 to-fuchsia-400 bg-clip-text text-transparent"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Prompt Library
           </h1>

@@ -49,7 +49,6 @@ export default function LoginPage() {
         </p>
         <h1
           className="text-2xl font-bold text-[#f2f2f7] mb-6"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           เข้าสู่ระบบ
         </h1>

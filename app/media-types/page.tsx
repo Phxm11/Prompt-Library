@@ -27,7 +27,6 @@ export default async function MediaTypesPage() {
       </p>
       <h1
         className="text-3xl font-bold mb-1 text-[#f2f2f7]"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
         ประเภทสื่อ
       </h1>

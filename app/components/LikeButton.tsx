@@ -1,28 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-
-const LIKED_IDS_KEY = 'prompt_library_liked_ids'
-
-function getLikedIds(): string[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(LIKED_IDS_KEY) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-function saveLikedIds(ids: string[]) {
-  localStorage.setItem(LIKED_IDS_KEY, JSON.stringify(ids))
-}
 
 type LikeButtonProps = {
   promptId: string
   initialLikeCount: number
   size?: number
-  // true เมื่อปุ่มนี้อยู่ในการ์ดที่เป็นลิงก์ (ต้องกันไม่ให้คลิกแล้วลิงก์ทำงานด้วย)
   insideLink?: boolean
   showCount?: boolean
 }
@@ -35,54 +20,95 @@ export default function LikeButton({
   showCount = true,
 }: LikeButtonProps) {
   const supabase = createClient()
+  const router = useRouter()
+  const [userId, setUserId] = useState<string | null | undefined>(undefined)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(initialLikeCount)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    setLiked(getLikedIds().includes(promptId))
-  }, [promptId])
+    let cancelled = false
 
-  async function handleToggle(e: React.MouseEvent) {
+    async function loadFavorite() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (cancelled) return
+      setUserId(user?.id ?? null)
+      if (!user) return
+
+      const { data } = await supabase
+        .from('favorites')
+        .select('favorite_id')
+        .eq('user_id', user.id)
+        .eq('prompt_id', promptId)
+        .maybeSingle()
+
+      if (!cancelled) setLiked(Boolean(data))
+    }
+
+    void loadFavorite()
+    return () => {
+      cancelled = true
+    }
+  }, [promptId, supabase])
+
+  async function handleToggle(event: React.MouseEvent) {
     if (insideLink) {
-      e.preventDefault()
-      e.stopPropagation()
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    if (!userId) {
+      router.push(`/login?next=/prompts/${promptId}`)
+      return
     }
     if (busy) return
+
     setBusy(true)
-
     const nextLiked = !liked
-    const currentIds = getLikedIds()
-
-    // optimistic update: อัปเดตหน้าจอทันทีก่อนรอ server ตอบกลับ
     setLiked(nextLiked)
-    setLikeCount((prev) => (nextLiked ? prev + 1 : Math.max(prev - 1, 0)))
+    setLikeCount((count) => (nextLiked ? count + 1 : Math.max(count - 1, 0)))
 
     try {
+      const favoriteRequest = nextLiked
+        ? supabase.from('favorites').insert({ user_id: userId, prompt_id: promptId })
+        : supabase.from('favorites').delete().eq('user_id', userId).eq('prompt_id', promptId)
+      const { error: favoriteError } = await favoriteRequest
+      if (favoriteError) throw favoriteError
+
+      const { error: countError } = await supabase.rpc(
+        nextLiked ? 'increment_like_count' : 'decrement_like_count',
+        { prompt_id_input: promptId }
+      )
+      if (countError) throw countError
+
       if (nextLiked) {
-        saveLikedIds([...currentIds, promptId])
-        const { error } = await supabase.rpc('increment_like_count', { prompt_id_input: promptId })
-        if (error) throw error
-      } else {
-        saveLikedIds(currentIds.filter((id) => id !== promptId))
-        const { error } = await supabase.rpc('decrement_like_count', { prompt_id_input: promptId })
-        if (error) throw error
+        await supabase.from('usage_history').insert({
+          prompt_id: promptId,
+          user_id: userId,
+          action_type: 'like',
+        })
       }
-    } catch (err) {
-      // ถ้า error ให้ย้อนกลับสถานะเดิม
-      console.error('Like toggle failed:', err)
+      router.refresh()
+    } catch (error) {
+      console.error('Like toggle failed:', error)
       setLiked(!nextLiked)
-      setLikeCount((prev) => (nextLiked ? Math.max(prev - 1, 0) : prev + 1))
-      saveLikedIds(currentIds)
+      setLikeCount((count) => (nextLiked ? Math.max(count - 1, 0) : count + 1))
     } finally {
       setBusy(false)
     }
   }
 
+  const notLoggedIn = userId === null
+
   return (
     <button
       onClick={handleToggle}
-      className={`flex items-center gap-1.5 transition-transform active:scale-90 ${
+      disabled={busy}
+      title={notLoggedIn ? 'เข้าสู่ระบบเพื่อบันทึกรายการโปรด' : liked ? 'นำออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
+      className={`flex items-center gap-1.5 transition-transform active:scale-90 disabled:opacity-60 ${
         insideLink
           ? 'w-9 h-9 rounded-lg backdrop-blur-md border justify-center ' +
             (liked
@@ -90,17 +116,8 @@ export default function LikeButton({
               : 'bg-[#0a0a0f]/80 border-fuchsia-400/30 text-[#c8c8d4] hover:border-fuchsia-400/60 hover:text-fuchsia-300')
           : 'text-[#c8c8d4] hover:text-fuchsia-300'
       }`}
-      title={liked ? 'เลิกถูกใจ' : 'ถูกใจ'}
     >
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill={liked ? '#ff3ec8' : 'none'}
-        stroke={liked ? '#ff3ec8' : 'currentColor'}
-        strokeWidth="2"
-        className="transition-colors"
-      >
+      <svg width={size} height={size} viewBox="0 0 24 24" fill={liked ? '#ff3ec8' : 'none'} stroke={liked ? '#ff3ec8' : 'currentColor'} strokeWidth="2" className="transition-colors">
         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
       </svg>
       {showCount && <span className="text-xs font-mono">{likeCount}</span>}

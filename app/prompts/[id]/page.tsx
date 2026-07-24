@@ -94,7 +94,6 @@ export default async function PromptDetailPage({
 
             <h1
               className="text-2xl font-bold text-[#f2f2f7] mb-2"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
               {prompt.title}
             </h1>

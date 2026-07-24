@@ -8,7 +8,6 @@ export default function NotFound() {
 
         <h1
           className="text-7xl font-bold mb-4 bg-gradient-to-r from-cyan-300 via-cyan-200 to-fuchsia-400 bg-clip-text text-transparent"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           404
         </h1>

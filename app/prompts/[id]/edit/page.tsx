@@ -58,7 +58,6 @@ export default async function EditPromptPage({
         </p>
         <h1
           className="text-3xl font-bold mb-8 text-[#f2f2f7]"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           แก้ไข Prompt
         </h1>

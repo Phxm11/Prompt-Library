@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import LikeButton from '@/app/components/LikeButton'
+import Icon from '@/app/components/Icon'
 
 type PromptCardProps = {
   prompt: {
@@ -110,8 +111,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         {/* แถวล่าง: สถิติ + ปุ่มดูรายละเอียด */}
         <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-[#232336]">
           <div className="flex items-center gap-3 text-xs text-[#666680] font-mono">
-            <span>👁 {prompt.view_count}</span>
-            {typeof prompt.copy_count === 'number' && <span>📋 {prompt.copy_count}</span>}
+            <span className="flex items-center gap-1"><Icon name="eye" size={14} />{prompt.view_count}</span>
+            {typeof prompt.copy_count === 'number' && <span className="flex items-center gap-1"><Icon name="copy" size={14} />{prompt.copy_count}</span>}
             <LikeButton
               promptId={prompt.prompt_id}
               initialLikeCount={prompt.like_count}

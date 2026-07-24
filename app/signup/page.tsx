@@ -79,7 +79,6 @@ export default function SignupPage() {
         </p>
         <h1
           className="text-2xl font-bold text-[#f2f2f7] mb-6"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           สมัครสมาชิก
         </h1>

@@ -35,7 +35,6 @@ export default function Error({
 
         <h1
           className="text-xl font-bold text-[#f2f2f7] mb-2"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           เกิดข้อผิดพลาดบางอย่าง
         </h1>

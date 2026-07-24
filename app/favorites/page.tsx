@@ -1,153 +1,87 @@
-'use client'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import PromptCard from '@/app/components/PromptCard'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-
-type LikeButtonProps = {
-  promptId: string
-  initialLikeCount: number
-  size?: number
-  // true เมื่อปุ่มนี้อยู่ในการ์ดที่เป็นลิงก์ (ต้องกันไม่ให้คลิกแล้วลิงก์ทำงานด้วย)
-  insideLink?: boolean
-  showCount?: boolean
+type Prompt = {
+  prompt_id: string
+  title: string
+  prompt_text: string
+  cover_image_url: string | null
+  view_count: number
+  like_count: number
+  copy_count?: number
+  categories: { name: string } | null
+  media_types: { name: string } | null
 }
 
-export default function LikeButton({
-  promptId,
-  initialLikeCount,
-  size = 18,
-  insideLink = false,
-  showCount = true,
-}: LikeButtonProps) {
-  const supabase = createClient()
-  const router = useRouter()
+export default async function FavoritesPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  const [userId, setUserId] = useState<string | null | undefined>(undefined) // undefined = กำลังเช็คอยู่
-  const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(initialLikeCount)
-  const [busy, setBusy] = useState(false)
-
-  // เช็คว่า login อยู่ไหม + เคยกดถูกใจ prompt นี้ไว้หรือยัง (จากตาราง favorites จริง)
-  useEffect(() => {
-    let cancelled = false
-
-    async function init() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (cancelled) return
-      setUserId(user?.id ?? null)
-
-      if (user) {
-        const { data } = await supabase
-          .from('favorites')
-          .select('favorite_id')
-          .eq('user_id', user.id)
-          .eq('prompt_id', promptId)
-          .maybeSingle()
-
-        if (!cancelled) setLiked(Boolean(data))
-      }
-    }
-
-    init()
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promptId])
-
-  async function handleToggle(e: React.MouseEvent) {
-    if (insideLink) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    // ยังไม่ login -> พาไปหน้า login แทนการกดถูกใจ
-    if (!userId) {
-      router.push(`/login?next=/prompts/${promptId}`)
-      return
-    }
-
-    if (busy) return
-    setBusy(true)
-
-    const nextLiked = !liked
-    setLiked(nextLiked)
-    setLikeCount((prev) => (nextLiked ? prev + 1 : Math.max(prev - 1, 0)))
-
-    try {
-      if (nextLiked) {
-        // บันทึกลง favorites จริง -> ทำให้ขึ้นในหน้า "รายการโปรด" ทันที
-        const { error: favError } = await supabase
-          .from('favorites')
-          .insert({ user_id: userId, prompt_id: promptId })
-        if (favError) throw favError
-
-        const { error: countError } = await supabase.rpc('increment_like_count', {
-          prompt_id_input: promptId,
-        })
-        if (countError) throw countError
-
-        // บันทึกลงประวัติการใช้งานด้วย ให้หน้าประวัติเห็น action นี้
-        await supabase.from('usage_history').insert({
-          prompt_id: promptId,
-          user_id: userId,
-          action_type: 'like',
-        })
-      } else {
-        const { error: favError } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('user_id', userId)
-          .eq('prompt_id', promptId)
-        if (favError) throw favError
-
-        const { error: countError } = await supabase.rpc('decrement_like_count', {
-          prompt_id_input: promptId,
-        })
-        if (countError) throw countError
-      }
-
-      router.refresh()
-    } catch (err) {
-      console.error('Like toggle failed:', err)
-      setLiked(!nextLiked)
-      setLikeCount((prev) => (nextLiked ? Math.max(prev - 1, 0) : prev + 1))
-    } finally {
-      setBusy(false)
-    }
+  if (!user) {
+    return (
+      <main className="max-w-6xl mx-auto px-6 py-20 text-center">
+        <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-4 uppercase">
+          // favorites
+        </p>
+        <h1 className="text-3xl font-bold mb-3 text-[#f2f2f7]">รายการโปรด</h1>
+        <p className="text-[#8888a0] mb-6">เข้าสู่ระบบเพื่อดู Prompt ที่คุณบันทึกไว้</p>
+        <Link
+          href="/login?next=/favorites"
+          className="inline-flex px-5 py-2.5 rounded-lg font-mono text-sm bg-cyan-500/10 text-cyan-300 border border-cyan-400/60 hover:bg-cyan-500/20 transition-all"
+        >
+          เข้าสู่ระบบ
+        </Link>
+      </main>
+    )
   }
 
-  const notLoggedIn = userId === null
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('created_at, prompts(prompt_id, title, prompt_text, cover_image_url, view_count, like_count, copy_count, categories(name), media_types(name))')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  const prompts: Prompt[] = (data ?? [])
+    .flatMap((favorite) => favorite.prompts ?? [])
+    .map((prompt) => ({
+      ...prompt,
+      categories: prompt.categories?.[0] ?? null,
+      media_types: prompt.media_types?.[0] ?? null,
+    }))
 
   return (
-    <button
-      onClick={handleToggle}
-      title={notLoggedIn ? 'เข้าสู่ระบบเพื่อถูกใจ' : liked ? 'เลิกถูกใจ' : 'ถูกใจ'}
-      className={`flex items-center gap-1.5 transition-transform active:scale-90 ${
-        insideLink
-          ? 'w-9 h-9 rounded-lg backdrop-blur-md border justify-center ' +
-            (liked
-              ? 'bg-fuchsia-500/20 border-fuchsia-400 text-fuchsia-300'
-              : 'bg-[#0a0a0f]/80 border-fuchsia-400/30 text-[#c8c8d4] hover:border-fuchsia-400/60 hover:text-fuchsia-300')
-          : 'text-[#c8c8d4] hover:text-fuchsia-300'
-      }`}
-    >
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill={liked ? '#ff3ec8' : 'none'}
-        stroke={liked ? '#ff3ec8' : 'currentColor'}
-        strokeWidth="2"
-        className="transition-colors"
-      >
-        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
-      </svg>
-      {showCount && <span className="text-xs font-mono">{likeCount}</span>}
-    </button>
+    <main className="max-w-6xl mx-auto px-6 py-12">
+      <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-2 uppercase">
+        // favorites
+      </p>
+      <h1 className="text-3xl font-bold mb-1 text-[#f2f2f7]">รายการโปรด</h1>
+      <p className="text-[#8888a0] text-sm mb-8">Prompt ที่คุณบันทึกไว้</p>
+
+      {error && (
+        <p className="text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg px-4 py-3">
+          เกิดข้อผิดพลาด: {error.message}
+        </p>
+      )}
+
+      {!error && prompts.length === 0 && (
+        <div className="text-center py-16 border border-dashed border-[#232336] rounded-xl">
+          <p className="text-[#8888a0] font-mono text-sm">{'> '}ยังไม่มี Prompt ในรายการโปรด</p>
+          <Link href="/" className="inline-block mt-4 text-sm text-cyan-300 hover:text-cyan-200">
+            ไปเลือก Prompt
+          </Link>
+        </div>
+      )}
+
+      {prompts.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {prompts.map((prompt) => (
+            <PromptCard key={prompt.prompt_id} prompt={prompt} />
+          ))}
+        </div>
+      )}
+    </main>
   )
 }

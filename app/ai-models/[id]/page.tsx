@@ -37,7 +37,6 @@ export default async function AiModelDetailPage({
 
       <h1
         className="text-3xl font-bold mt-4 mb-1 text-[#f2f2f7]"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
         {aiModel.name}
       </h1>

@@ -42,7 +42,6 @@ export default async function SearchPage({
       </p>
       <h1
         className="text-3xl font-bold mb-6 text-[#f2f2f7]"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
         ค้นหา Prompt
       </h1>
