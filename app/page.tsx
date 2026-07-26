@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import CategoryFilter from '@/app/components/CategoryFilter'
+import PromptFilters from '@/app/components/PromptFilters'
 import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
 
 const PAGE_SIZE = 12
@@ -7,26 +7,39 @@ const PAGE_SIZE = 12
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ category?: string; media_type?: string; ai_model?: string }>
 }) {
-  const { category } = await searchParams
+  const { category, media_type, ai_model } = await searchParams
   const supabase = await createClient()
 
-  // ดึงหมวดหมู่ทั้งหมดสำหรับแถบ filter
   const { data: categories } = await supabase
     .from('categories')
     .select('category_id, name, slug')
     .eq('is_active', true)
     .order('sort_order')
 
-  // หา category_id จาก slug (ถ้ามีการ filter)
-  const matchedCategory = category
-    ? categories?.find((c) => c.slug === category)
-    : undefined
-  const categoryId = matchedCategory?.category_id ?? null
+  const { data: mediaTypes } = await supabase
+    .from('media_types')
+    .select('media_type_id, name, slug')
+    .order('name')
 
-  // ดึงเฉพาะหน้าแรก (12 รายการ) พร้อมนับจำนวนทั้งหมดที่ตรงเงื่อนไข
-  // เพื่อรู้ว่ายังมีข้อมูลให้โหลดเพิ่มไหม (infinite scroll)
+  const { data: aiModels } = await supabase
+    .from('ai_models')
+    .select('ai_model_id, name')
+    .eq('is_active', true)
+    .order('name')
+
+  const categoryId = category
+    ? categories?.find((c) => c.slug === category)?.category_id ?? null
+    : null
+  const mediaTypeId = media_type
+    ? mediaTypes?.find((m) => m.slug === media_type)?.media_type_id ?? null
+    : null
+  const aiModelId = ai_model ?? null
+
+  // Server ดึงแค่ category + media_type เท่านั้น (เร็ว ไม่ซับซ้อน)
+  // ถ้ามีการกรองด้วยโมเดล AI ด้วย จะให้ PromptInfiniteGrid ไป fetch ซ้ำ
+  // ฝั่ง client อีกทีตอน mount แทน (ดู logic ใน component นั้น)
   let query = supabase
     .from('prompts')
     .select('*, categories(name), media_types(name)', { count: 'exact' })
@@ -35,13 +48,13 @@ export default async function HomePage({
     .order('prompt_id', { ascending: true })
     .range(0, PAGE_SIZE - 1)
 
-  if (categoryId) {
-    query = query.eq('category_id', categoryId)
-  }
+  if (categoryId) query = query.eq('category_id', categoryId)
+  if (mediaTypeId) query = query.eq('media_type_id', mediaTypeId)
 
   const { data: prompts, count, error } = await query
 
   const hasMore = (count ?? 0) > PAGE_SIZE
+  const filterKey = `${categoryId ?? 'all'}-${mediaTypeId ?? 'all'}-${aiModelId ?? 'all'}`
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
@@ -63,6 +76,7 @@ export default async function HomePage({
           </p>
           <h1
             className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-300 via-cyan-200 to-fuchsia-400 bg-clip-text text-transparent"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Prompt Library
           </h1>
@@ -71,7 +85,11 @@ export default async function HomePage({
           </p>
         </div>
 
-        <CategoryFilter categories={categories ?? []} />
+        <PromptFilters
+          categories={(categories ?? []).map((c) => ({ id: c.category_id, name: c.name, slug: c.slug }))}
+          mediaTypes={(mediaTypes ?? []).map((m) => ({ id: m.media_type_id, name: m.name, slug: m.slug }))}
+          aiModels={(aiModels ?? []).map((a) => ({ id: a.ai_model_id, name: a.name }))}
+        />
 
         {error && (
           <p className="text-fuchsia-400 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg px-4 py-3 mt-4">
@@ -79,23 +97,15 @@ export default async function HomePage({
           </p>
         )}
 
-        {prompts && prompts.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-[#8888a0] font-mono text-sm">
-              {'>'} ยังไม่มี Prompt ในหมวดหมู่นี้
-            </p>
-          </div>
-        )}
-
         <div className="mt-6">
-          {/* key เปลี่ยนตาม category ทำให้ component รีเซ็ต state ใหม่หมด
-              เวลาเปลี่ยนหมวดหมู่ (ไม่ต้องเขียน logic reset เอง) */}
           <PromptInfiniteGrid
-            key={categoryId ?? 'all'}
+            key={filterKey}
             initialPrompts={prompts ?? []}
             initialHasMore={hasMore}
             mode="browse"
             categoryId={categoryId}
+            mediaTypeId={mediaTypeId}
+            aiModelId={aiModelId}
           />
         </div>
       </div>

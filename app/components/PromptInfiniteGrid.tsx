@@ -21,9 +21,10 @@ type Prompt = {
 type PromptInfiniteGridProps = {
   initialPrompts: Prompt[]
   initialHasMore: boolean
-  // 'browse' = หน้ารายการ/หมวดหมู่ทั่วไป, 'search' = หน้าค้นหา
   mode: 'browse' | 'search'
   categoryId?: string | null
+  mediaTypeId?: string | null
+  aiModelId?: string | null
   query?: string
 }
 
@@ -32,48 +33,99 @@ export default function PromptInfiniteGrid({
   initialHasMore,
   mode,
   categoryId,
+  mediaTypeId,
+  aiModelId,
   query,
 }: PromptInfiniteGridProps) {
   const supabase = createClient()
-  const [prompts, setPrompts] = useState(initialPrompts)
-  const [hasMore, setHasMore] = useState(initialHasMore)
-  const [loading, setLoading] = useState(false)
+
+  // ถ้ามีการกรองด้วยโมเดล AI ต้อง fetch ใหม่ทั้งหมดฝั่ง client ตอน mount
+  // (server ไม่ได้กรองส่วนนี้ให้ เพื่อให้ server-side query เรียบง่ายและเร็ว)
+  const needsClientRefetch = mode === 'browse' && Boolean(aiModelId)
+
+  const [prompts, setPrompts] = useState<Prompt[]>(needsClientRefetch ? [] : initialPrompts)
+  const [hasMore, setHasMore] = useState(needsClientRefetch ? true : initialHasMore)
+  const [loading, setLoading] = useState(needsClientRefetch)
+  const [initializing, setInitializing] = useState(needsClientRefetch)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  async function loadMore() {
-    if (loading || !hasMore) return
-    setLoading(true)
+  async function getAllowedIdsForAiModel(): Promise<string[] | null> {
+    if (mode !== 'browse' || !aiModelId) return null
+    const { data, error } = await supabase
+      .from('prompt_ai_models')
+      .select('prompt_id')
+      .eq('ai_model_id', aiModelId)
+    if (error) return []
+    return (data ?? []).map((r: { prompt_id: string }) => r.prompt_id)
+  }
 
-    const from = prompts.length
-    const to = from + PAGE_SIZE - 1
+  async function fetchPage(from: number, to: number) {
+    let allowedIds: string[] | null = null
+    if (mode === 'browse' && aiModelId) {
+      allowedIds = await getAllowedIdsForAiModel()
+      if (!allowedIds || allowedIds.length === 0) {
+        return { data: [] as Prompt[], reachedEnd: true }
+      }
+    }
 
     let q = supabase
       .from('prompts')
       .select('*, categories(name), media_types(name)')
       .eq('is_public', true)
       .order('created_at', { ascending: false })
-      .order('prompt_id', { ascending: true }) // tie-breaker กันลำดับสลับตอน created_at ซ้ำกัน
+      .order('prompt_id', { ascending: true })
       .range(from, to)
 
-    if (mode === 'browse' && categoryId) {
-      q = q.eq('category_id', categoryId)
+    if (mode === 'browse') {
+      if (categoryId) q = q.eq('category_id', categoryId)
+      if (mediaTypeId) q = q.eq('media_type_id', mediaTypeId)
+      if (allowedIds) q = q.in('prompt_id', allowedIds)
     }
     if (mode === 'search' && query) {
       q = q.textSearch('search_vector', query, { type: 'websearch', config: 'simple' })
     }
 
     const { data, error } = await q
+    if (error) return { data: [] as Prompt[], reachedEnd: true }
+    return { data: data ?? [], reachedEnd: (data ?? []).length < PAGE_SIZE }
+  }
 
-    if (!error && data) {
-      setPrompts((prev) => {
-        const existingIds = new Set(prev.map((p) => p.prompt_id))
-        const uniqueNewData = data.filter((p: Prompt) => !existingIds.has(p.prompt_id))
-        return [...prev, ...uniqueNewData]
-      })
-      setHasMore(data.length === PAGE_SIZE)
-    } else {
-      setHasMore(false)
+  // ตอน mount: ถ้าต้อง refetch เพราะกรองด้วยโมเดล AI ให้โหลดหน้าแรกใหม่เอง
+  useEffect(() => {
+    if (!needsClientRefetch) return
+
+    let cancelled = false
+    setInitializing(true)
+    setLoading(true)
+
+    fetchPage(0, PAGE_SIZE - 1).then(({ data, reachedEnd }) => {
+      if (cancelled) return
+      setPrompts(data)
+      setHasMore(!reachedEnd)
+      setLoading(false)
+      setInitializing(false)
+    })
+
+    return () => {
+      cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function loadMore() {
+    if (loading || !hasMore || initializing) return
+    setLoading(true)
+
+    const from = prompts.length
+    const to = from + PAGE_SIZE - 1
+    const { data, reachedEnd } = await fetchPage(from, to)
+
+    setPrompts((prev) => {
+      const existingIds = new Set(prev.map((p) => p.prompt_id))
+      const uniqueNewData = data.filter((p: Prompt) => !existingIds.has(p.prompt_id))
+      return [...prev, ...uniqueNewData]
+    })
+    setHasMore(!reachedEnd)
     setLoading(false)
   }
 
@@ -84,7 +136,7 @@ export default function PromptInfiniteGrid({
           loadMore()
         }
       },
-      { rootMargin: '400px' } // เริ่มโหลดก่อนถึงล่างสุดจริง 400px ให้ลื่นขึ้น
+      { rootMargin: '400px' }
     )
 
     const el = sentinelRef.current
@@ -94,20 +146,40 @@ export default function PromptInfiniteGrid({
       if (el) observer.unobserve(el)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prompts.length, hasMore, loading])
+  }, [prompts.length, hasMore, loading, initializing])
+
+  if (initializing) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-xl overflow-hidden bg-[#12121c] border border-[#232336] animate-pulse aspect-[4/5]"
+          />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <>
+      {prompts.length === 0 && (
+        <div className="text-center py-20">
+          <p className="text-[#8888a0] font-mono text-sm">
+            {'>'} ไม่พบ Prompt ที่ตรงกับตัวกรองนี้
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {prompts.map((prompt) => (
           <PromptCard key={prompt.prompt_id} prompt={prompt} />
         ))}
       </div>
 
-      {/* จุดสังเกตด้านล่างสุด - พอ scroll มาถึงจะสั่งโหลดหน้าต่อไป */}
       <div ref={sentinelRef} className="h-1" />
 
-      {loading && (
+      {loading && !initializing && (
         <div className="flex items-center justify-center gap-2 py-8 text-cyan-400/80 font-mono text-sm">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse [animation-delay:150ms]" />
