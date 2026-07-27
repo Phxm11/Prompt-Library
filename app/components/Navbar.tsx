@@ -29,7 +29,7 @@ export default function Navbar() {
   const supabase = createClient()
 
   const [email, setEmail] = useState<string | null>(null)
-  const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null)
+  const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null; role: string | null } | null>(null)
   const [loadingUser, setLoadingUser] = useState(true)
   const [moreOpen, setMoreOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
@@ -40,13 +40,14 @@ export default function Navbar() {
     async function loadProfile(userId: string) {
       const { data } = await supabase
         .from('profiles')
-        .select('display_name, avatar_url')
+        .select('display_name, avatar_url, role')
         .eq('id', userId)
         .maybeSingle()
       // รูปในฐานข้อมูลมาก่อน ถ้าไม่มีค่อยใช้รูปสำรองที่เก็บไว้ในเครื่อง
       setProfile({
         display_name: data?.display_name ?? null,
         avatar_url: data?.avatar_url ?? getLocalAvatar(userId),
+        role: data?.role ?? null,
       })
     }
 
@@ -241,6 +242,17 @@ export default function Navbar() {
                         </p>
                         <p className="truncate text-xs font-mono text-faint mt-0.5">{email}</p>
                       </div>
+
+                      {profile?.role === 'admin' && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setUserOpen(false)}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-mono text-accent2 transition-colors hover:bg-accent2/10"
+                        >
+                          <Icon name="sparkles" size={15} />
+                          จัดการระบบ (Admin)
+                        </Link>
+                      )}
 
                       <Link
                         href="/profile"

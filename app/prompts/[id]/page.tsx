@@ -6,6 +6,7 @@ import CopyPromptButton from '@/app/components/CopyPromptButton'
 import StarRating from '@/app/components/StarRating'
 import ReviewSection from '@/app/components/ReviewSection'
 import LikeButton from '@/app/components/LikeButton'
+import PromptOwnerActions from '@/app/components/PromptOwnerActions'
 
 export default async function PromptDetailPage({
   params,
@@ -15,7 +16,11 @@ export default async function PromptDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: prompt, error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let query = supabase
     .from('prompts')
     .select(`
       *,
@@ -25,8 +30,11 @@ export default async function PromptDetailPage({
       prompt_ai_models (ai_models (ai_model_id, name, provider, logo_url))
     `)
     .eq('prompt_id', id)
-    .eq('is_public', true)
-    .single()
+
+  // ให้เห็น prompt ที่เป็น public เสมอ หรือถ้าเป็นเจ้าของก็เห็นของตัวเองได้แม้จะซ่อนไว้ (is_public = false)
+  query = user ? query.or(`is_public.eq.true,user_id.eq.${user.id}`) : query.eq('is_public', true)
+
+  const { data: prompt, error } = await query.single()
 
   if (error || !prompt) {
     notFound()
@@ -36,12 +44,10 @@ export default async function PromptDetailPage({
 
   // บันทึก view ลง usage_history ด้วย (เพื่อให้หน้าประวัติการใช้งานมีข้อมูลจริง)
   // fire-and-forget ไม่ await เพื่อไม่ให้หน้าเว็บโหลดช้า
-  supabase.auth.getUser().then(({ data: { user } }) => {
-    supabase.from('usage_history').insert({
-      prompt_id: id,
-      user_id: user?.id ?? null,
-      action_type: 'view',
-    })
+  supabase.from('usage_history').insert({
+    prompt_id: id,
+    user_id: user?.id ?? null,
+    action_type: 'view',
   })
 
   const sortedExamples = (prompt.prompt_examples ?? []).sort(
@@ -94,6 +100,8 @@ export default async function PromptDetailPage({
                 </span>
               )}
             </div>
+
+            <PromptOwnerActions promptId={prompt.prompt_id} ownerId={prompt.user_id} />
 
             <h1
               className="section-title text-3xl font-extrabold mb-2"
