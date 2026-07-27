@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import SelectMenu from '@/app/components/SelectMenu'
 
 type Option = { id: string; name: string; slug?: string }
 
@@ -27,15 +28,13 @@ export default function PromptFilters({ categories, mediaTypes, aiModels }: Prom
     } else {
       params.delete(key)
     }
-    router.push(`/?${params.toString()}`)
+    router.push(`/home?${params.toString()}`)
   }
 
   function clearAll() {
-    router.push('/')
+    router.push('/home')
   }
 
-  const selectClass =
-    'bg-[#12121c] border border-[#232336] rounded-lg px-3 py-1.5 text-sm font-mono text-[#c8c8d4] focus:outline-none focus:border-cyan-400/60 transition-all cursor-pointer'
 
   return (
     <div className="space-y-3">
@@ -45,8 +44,8 @@ export default function PromptFilters({ categories, mediaTypes, aiModels }: Prom
           onClick={() => updateParam('category', null)}
           className={`px-4 py-1.5 rounded-full text-sm font-mono border transition-all ${
             !activeCategory
-              ? 'bg-cyan-500/10 text-cyan-300 border-cyan-400 shadow-[0_0_16px_rgba(0,229,255,0.35)]'
-              : 'bg-transparent text-[#8888a0] border-[#232336] hover:border-cyan-500/50 hover:text-cyan-300'
+              ? 'bg-accent/10 text-accent border-accent shadow-[0_0_16px_rgba(0,229,255,0.35)]'
+              : 'bg-transparent text-muted border-line hover:border-accent/50 hover:text-accent'
           }`}
         >
           ทั้งหมด
@@ -58,8 +57,8 @@ export default function PromptFilters({ categories, mediaTypes, aiModels }: Prom
             onClick={() => updateParam('category', cat.slug === activeCategory ? null : cat.slug!)}
             className={`px-4 py-1.5 rounded-full text-sm font-mono border transition-all ${
               activeCategory === cat.slug
-                ? 'bg-cyan-500/10 text-cyan-300 border-cyan-400 shadow-[0_0_16px_rgba(0,229,255,0.35)]'
-                : 'bg-transparent text-[#8888a0] border-[#232336] hover:border-cyan-500/50 hover:text-cyan-300'
+                ? 'bg-accent/10 text-accent border-accent shadow-[0_0_16px_rgba(0,229,255,0.35)]'
+                : 'bg-transparent text-muted border-line hover:border-accent/50 hover:text-accent'
             }`}
           >
             {cat.name}
@@ -69,36 +68,28 @@ export default function PromptFilters({ categories, mediaTypes, aiModels }: Prom
 
       {/* ประเภทสื่อ + โมเดล AI: dropdown กรองเพิ่มพร้อมกันได้ */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <select
+        <SelectMenu
+          className="w-48"
+          ariaLabel="กรองตามประเภทสื่อ"
+          placeholder="ทุกประเภทสื่อ"
           value={activeMediaType ?? ''}
-          onChange={(e) => updateParam('media_type', e.target.value || null)}
-          className={selectClass}
-        >
-          <option value="">ทุกประเภทสื่อ</option>
-          {mediaTypes.map((m) => (
-            <option key={m.id} value={m.slug} className="bg-[#12121c]">
-              {m.name}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => updateParam('media_type', v || null)}
+          options={mediaTypes.map((m) => ({ value: m.slug!, label: m.name }))}
+        />
 
-        <select
+        <SelectMenu
+          className="w-48"
+          ariaLabel="กรองตามโมเดล AI"
+          placeholder="ทุกโมเดล AI"
           value={activeAiModel ?? ''}
-          onChange={(e) => updateParam('ai_model', e.target.value || null)}
-          className={selectClass}
-        >
-          <option value="">ทุกโมเดล AI</option>
-          {aiModels.map((a) => (
-            <option key={a.id} value={a.id} className="bg-[#12121c]">
-              {a.name}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => updateParam('ai_model', v || null)}
+          options={aiModels.map((a) => ({ value: a.id, label: a.name }))}
+        />
 
         {activeCount > 0 && (
           <button
             onClick={clearAll}
-            className="text-xs font-mono text-fuchsia-400 hover:text-fuchsia-300 flex items-center gap-1"
+            className="text-xs font-mono text-accent2 hover:text-accent2 flex items-center gap-1"
           >
             ✕ ล้างตัวกรองทั้งหมด ({activeCount})
           </button>

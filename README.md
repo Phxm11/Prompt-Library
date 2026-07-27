@@ -18,7 +18,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to self-host exactly two typefaces, declared in `app/layout.tsx`:
+
+| ฟอนต์ | ใช้กับ | ตัวแปร | น้ำหนัก | Utility |
+| --- | --- | --- | --- | --- |
+| Prompt | ภาษาไทย (subset `thai` + `latin`) — ฟอนต์หลักทั้งเว็บ | `--font-prompt` | 300–800 | `font-sans` |
+| Baloo 2 | ตัวเลข/ภาษาอังกฤษ (subset `latin`) สไตล์น่ารัก | `--font-baloo` | 500–800 | `font-display`, `font-mono` |
+
+Baloo 2 ไม่มีกลุ่มตัวอักษรไทย จึงตั้ง Prompt เป็น fallback ต่อท้ายใน `app/globals.css` — ห้ามเพิ่มฟอนต์อื่นนอกเหนือจากสองตัวนี้
 
 ## Learn More
 

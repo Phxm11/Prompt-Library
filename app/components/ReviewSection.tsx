@@ -112,27 +112,28 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
   }
 
   const inputClass =
-    'w-full bg-[#12121c] border border-[#232336] rounded-lg px-3.5 py-2.5 text-sm text-[#f2f2f7] placeholder:text-[#666680] focus:outline-none focus:border-cyan-400/60 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)] transition-all'
+    'w-full bg-surface border border-line rounded-lg px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)] transition-all'
 
   return (
-    <div className="mt-10 pt-8 border-t border-[#232336]">
-      <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-4 uppercase">
-        // reviews · {reviews.length}
-      </p>
+    <div className="mt-10 pt-8 border-t border-line">
+      <h2 className="section-title text-2xl font-extrabold text-ink mb-4">
+        รีวิว
+        <span className="text-base font-mono font-medium text-accent/80">({reviews.length})</span>
+      </h2>
 
       {/* ฟอร์มให้คะแนน */}
       <form
         onSubmit={handleSubmit}
-        className="bg-[#12121c] border border-[#232336] rounded-lg p-4 mb-6 space-y-3"
+        className="bg-surface border border-line rounded-lg p-4 mb-6 space-y-3"
       >
         {error && (
-          <div className="bg-fuchsia-500/10 border border-fuchsia-500/30 text-fuchsia-300 text-sm rounded-lg px-3 py-2">
+          <div className="bg-accent2/10 border border-accent2/30 text-accent2 text-sm rounded-lg px-3 py-2">
             {error}
           </div>
         )}
 
         <div>
-          <p className="text-xs font-mono text-[#8888a0] mb-1.5">ให้คะแนน</p>
+          <p className="text-xs font-mono text-muted mb-1.5">ให้คะแนน</p>
           <StarRating value={rating} onChange={setRating} />
         </div>
 
@@ -156,17 +157,17 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
         <button
           type="submit"
           disabled={submitting}
-          className="px-5 py-2 rounded-lg font-mono text-sm bg-cyan-500/10 text-cyan-300 border border-cyan-400/60 hover:bg-cyan-500/20 hover:shadow-[0_0_16px_rgba(0,229,255,0.25)] transition-all disabled:opacity-50"
+          className="px-5 py-2 rounded-lg font-mono text-sm bg-accent/10 text-accent border border-accent/60 hover:bg-accent/20 hover:shadow-[0_0_16px_rgba(0,229,255,0.25)] transition-all disabled:opacity-50"
         >
           {submitting ? 'กำลังส่ง...' : 'ส่งรีวิว'}
         </button>
       </form>
 
       {/* รายการรีวิว */}
-      {loading && <p className="text-[#666680] font-mono text-sm">กำลังโหลด...</p>}
+      {loading && <p className="text-faint font-mono text-sm">กำลังโหลด...</p>}
 
       {!loading && reviews.length === 0 && (
-        <p className="text-[#666680] font-mono text-sm py-6 text-center">
+        <p className="text-faint font-mono text-sm py-6 text-center">
           {'>'} ยังไม่มีรีวิว เป็นคนแรกที่ให้คะแนน prompt นี้สิ
         </p>
       )}
@@ -180,14 +181,14 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
           return (
             <div
               key={review.review_id}
-              className="bg-[#12121c] border border-[#232336] rounded-lg p-4"
+              className="bg-surface border border-line rounded-lg p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-[#f2f2f7]">{displayName}</span>
+                    <span className="text-sm font-medium text-ink">{displayName}</span>
                     {isMine && (
-                      <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-mono text-accent bg-accent/10 border border-accent/30 px-1.5 py-0.5 rounded">
                         คุณ
                       </span>
                     )}
@@ -196,13 +197,13 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs text-[#666680] font-mono">
+                  <span className="text-xs text-faint font-mono">
                     {new Date(review.created_at).toLocaleDateString('th-TH', { dateStyle: 'medium' })}
                   </span>
                   {isMine && (
                     <button
                       onClick={() => handleDelete(review.review_id)}
-                      className="text-xs text-fuchsia-400 hover:text-fuchsia-300 font-mono"
+                      className="text-xs text-accent2 hover:text-accent2 font-mono"
                     >
                       ลบ
                     </button>
@@ -211,7 +212,7 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
               </div>
 
               {review.comment && (
-                <p className="text-sm text-[#c8c8d4] mt-2 leading-relaxed">{review.comment}</p>
+                <p className="text-sm text-ink-soft mt-2 leading-relaxed">{review.comment}</p>
               )}
             </div>
           )

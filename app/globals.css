@@ -1,37 +1,259 @@
 @import "tailwindcss";
 
+/*
+  ใช้ 2 ฟอนต์เท่านั้น (โหลดผ่าน next/font ใน app/layout.tsx)
+    --font-prompt    : Prompt         (thai + latin) น้ำหนัก 300–800 — ฟอนต์หลักทั้งเว็บ
+    --font-jetbrains : JetBrains Mono (latin) variable — ตัวเลข/ภาษาอังกฤษ โทนเทอร์มินัล
+  JetBrains Mono ไม่มีสระ/พยัญชนะไทย จึงวาง Prompt ต่อท้ายไว้เป็น fallback ของกลุ่มตัวอักษรไทย
+*/
+
+/*
+  สีทั้งเว็บอ้างอิงจาก token ชุดนี้ชุดเดียว การสลับธีมคือการเปลี่ยนค่าตรงนี้
+  ห้ามใส่สีเป็นเลขฮาร์ดโค้ดในหน้าอีก ไม่งั้นธีมสว่างจะพัง
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-body: "Leelawadee UI", "Noto Sans Thai", Tahoma, system-ui, sans-serif;
-  --font-display: "Leelawadee UI", "Noto Sans Thai", Tahoma, system-ui, sans-serif;
-  --font-code: "Cascadia Mono", "Noto Sans Thai", Tahoma, monospace;
+  color-scheme: dark;
+
+  --base: #0a0a0f; /* พื้นหลังหน้า */
+  --surface: #12121c; /* การ์ด กล่อง อินพุต */
+  --surface-2: #1a1a28; /* ชั้นซ้อนใน เช่น skeleton */
+  --line: #232336; /* เส้นขอบ */
+  --ink: #f2f2f7; /* ตัวอักษรหลัก */
+  --ink-soft: #c8c8d4; /* ตัวอักษรรอง */
+  --muted: #8888a0; /* คำอธิบาย */
+  --faint: #666680; /* ป้ายจาง ๆ */
+  --accent: #67e8f9; /* ฟ้านีออน */
+  --accent-soft: #a5f3fc;
+  --accent-2: #f0abfc; /* ชมพูนีออน */
+  --grid: #00e5ff; /* เส้นตารางพื้นหลัง */
+  --grid-opacity: 0.07;
+  --glow-strength: 1; /* ความเข้มของก้อนแสงฟุ้ง */
 }
 
-@layer theme {
-  :root {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-body);
-    --font-mono: var(--font-code);
+[data-theme='light'] {
+  color-scheme: light;
+
+  --base: #f5f7fb;
+  --surface: #ffffff;
+  --surface-2: #eef1f7;
+  --line: #dde2ee;
+  --ink: #101423;
+  --ink-soft: #2f3548;
+  --muted: #5b6178;
+  --faint: #7c8296;
+  --accent: #0e7490;
+  --accent-soft: #0891b2;
+  --accent-2: #a21caf;
+  --grid: #0891b2;
+  --grid-opacity: 0.05;
+  --glow-strength: 0.45;
+}
+
+@theme inline {
+  --color-base: var(--base);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent2: var(--accent-2);
+
+  --font-sans: var(--font-prompt), sans-serif;
+  --font-display: var(--font-jetbrains), var(--font-prompt), sans-serif;
+  --font-mono: var(--font-jetbrains), var(--font-prompt), sans-serif;
+
+  /*
+    อนิเมชันตอนเปิดเข้าเว็บ — จำลอง spring ของ framer-motion
+    { type: 'spring', stiffness: 100, damping: 20 } ด้วย CSS ล้วน
+    damping ratio = 20 / (2 * sqrt(100 * 1)) = 1.0 → critically damped
+    คือไหลเข้าที่นุ่ม ๆ ไม่แกว่งเลยสักครั้ง
+    ค่าใน linear() คือการสุ่มจุดจากสมการ 1 - (1 + wt)e^(-wt), w = 10 rad/s
+  */
+  --animate-spring-up: spring-up 1s
+    linear(
+      0, 0.0902, 0.2642, 0.4422, 0.594, 0.7127, 0.8009, 0.8641, 0.9084, 0.9389,
+      0.9596, 0.9734, 0.9826, 0.9887, 0.9927, 0.9953, 0.997, 0.9981, 0.9988,
+      0.9992, 1
+    )
+    both;
+  --animate-float: float 6s ease-in-out infinite;
+
+  /* ใช้กับกรอบ HUD มุมภาพในหน้ารายละเอียด */
+  --animate-fade-soft: fade-only 0.7s ease-out both;
+
+  /* pop up ตอนคัดลอก — ตัวนี้ให้เด้งเลยจุดหมายนิดหนึ่ง เพราะเป็นการตอบสนองต่อการกด */
+  --animate-toast-in: toast-in 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+
+  /* เมนู dropdown — ต้องไวและไม่เด้ง ไม่งั้นกดเลือกซ้ำ ๆ แล้วรำคาญ */
+  --animate-menu-in: menu-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(26px) scale(0.9);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.03);
+  }
+  78% {
+    transform: translateY(2px) scale(0.996);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes spring-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* แสงฟุ้งพื้นหลังลอยช้า ๆ ให้หน้าไม่นิ่งสนิท */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(2deg);
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-body);
+  background: var(--base);
+  color: var(--ink);
+  font-family: var(--font-prompt), sans-serif;
+  /* ให้ตอนสลับธีมค่อย ๆ ไล่สี ไม่กระพริบ */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/*
+  หัวข้อทั่วไปใช้ Prompt เป็นหลัก เพราะส่วนใหญ่เป็นภาษาไทย
+  ถ้าให้ JetBrains Mono ขึ้นก่อน ตัวอักษรไทยจะ fallback แต่ "ช่องว่าง" ยังมาจาก
+  ฟอนต์ monospace ทำให้คำไทยห่างผิดปกติ — ข้อความอังกฤษล้วนให้ใส่ .font-display เอา
+*/
 h1,
 h2,
 h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-prompt), sans-serif;
+}
+
+/* ก้อนแสงฟุ้งพื้นหลัง — ธีมสว่างต้องเบาลง ไม่งั้นกลายเป็นคราบสีบนพื้นขาว */
+.glow-blob {
+  opacity: var(--glow-strength);
+}
+
+/*
+  หัวข้อหลักของแต่ละหน้า — แถบไล่สีนีออนหน้าข้อความ ใช้แทนป้าย // แบบคอมเมนต์โค้ดเดิม
+  ใช้ ::before เพื่อไม่ต้องเพิ่ม element ในทุกหน้า
+*/
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  /* ตัวหนังสือไล่สีฟ้า→ชมพู พร้อมเรืองแสง สีมาจาก token จึงเปลี่ยนตามธีมเอง */
+  background-image: linear-gradient(
+    to right,
+    var(--accent),
+    var(--accent-soft),
+    var(--accent-2)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 30%, transparent));
+}
+
+.section-title::before {
+  content: '';
+  flex: none;
+  width: 0.3125rem;
+  align-self: stretch;
+  min-height: 1.6em;
+  border-radius: 9999px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent-2));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* แบบจัดกลาง ใช้กับหัวข้อ section บนหน้าแรก */
+.section-title-center {
+  justify-content: center;
+}
+
+/*
+  .reveal = ค่อย ๆ โผล่ตอนเลื่อนมาถึง โดยไม่ต้องใช้ JS
+  ใช้ scroll-driven animation ถ้าเบราว์เซอร์รองรับเท่านั้น
+  ถ้าไม่รองรับก็แสดงผลปกติ — เนื้อหาไม่มีทางหายไป
+*/
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: spring-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 26%;
+    }
+  }
+}
+
+/*
+  เคารพการตั้งค่าลดการเคลื่อนไหวของระบบ (Windows: Animation effects / macOS: Reduce motion)
+  แต่ไม่ดับทิ้งทั้งหมด — "ลดการเคลื่อนไหว" ไม่ได้แปลว่า "ห้ามมีอะไรเปลี่ยนแปลง"
+  จึงตัดเฉพาะการขยับตำแหน่งกับของที่วนไม่จบ ส่วนการเฟดไล่ทีละชิ้นยังอยู่ครบ
+  ใช้ longhand ไม่ใช่ shorthand เพื่อไม่ให้ animation-delay ที่ไล่จังหวะไว้ถูกล้าง
+*/
+@media (prefers-reduced-motion: reduce) {
+  .animate-spring-up {
+    animation-name: fade-only;
+    animation-duration: 0.4s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+
+  .animate-float {
+    animation: none;
+  }
+
+  /*
+    ไม่ตัด transition ทิ้ง เพราะ transition เกือบทั้งหมดในเว็บนี้เกิดจาก hover
+    ซึ่งผู้ใช้เป็นคนสั่งเอง สั้น และไม่วนซ้ำ — ต่างจากอนิเมชันที่เล่นเองตอนเปิดหน้า
+  */
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes fade-only {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

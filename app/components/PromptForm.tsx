@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import SelectMenu from '@/app/components/SelectMenu'
 
 type Option = { id: string; name: string }
 
@@ -191,15 +192,15 @@ export default function PromptForm({
   }
 
   const inputClass =
-    'w-full bg-[#12121c] border border-[#232336] rounded-lg px-3.5 py-2.5 text-sm text-[#f2f2f7] placeholder:text-[#666680] focus:outline-none focus:border-cyan-400/60 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)] transition-all'
+    'w-full bg-surface border border-line rounded-lg px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)] transition-all'
 
   const labelClass =
-    'text-xs font-mono font-medium text-cyan-400/80 tracking-widest mb-2 block uppercase'
+    'text-xs font-mono font-medium text-accent/80 tracking-widest mb-2 block uppercase'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-fuchsia-500/10 border border-fuchsia-500/30 text-fuchsia-300 text-sm rounded-lg px-4 py-3">
+        <div className="bg-accent2/10 border border-accent2/30 text-accent2 text-sm rounded-lg px-4 py-3">
           {error}
         </div>
       )}
@@ -221,32 +222,22 @@ export default function PromptForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>หมวดหมู่</label>
-          <select
+          <SelectMenu
+            ariaLabel="หมวดหมู่"
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className={inputClass}
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id} className="bg-[#12121c]">
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={setCategoryId}
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
         </div>
 
         <div>
           <label className={labelClass}>ประเภทสื่อ</label>
-          <select
+          <SelectMenu
+            ariaLabel="ประเภทสื่อ"
             value={mediaTypeId}
-            onChange={(e) => setMediaTypeId(e.target.value)}
-            className={inputClass}
-          >
-            {mediaTypes.map((m) => (
-              <option key={m.id} value={m.id} className="bg-[#12121c]">
-                {m.name}
-              </option>
-            ))}
-          </select>
+            onChange={setMediaTypeId}
+            options={mediaTypes.map((m) => ({ value: m.id, label: m.name }))}
+          />
         </div>
       </div>
 
@@ -263,8 +254,8 @@ export default function PromptForm({
                 onClick={() => toggleModel(model.id)}
                 className={`px-3.5 py-1.5 rounded-full text-sm font-mono border transition-all ${
                   active
-                    ? 'bg-cyan-500/10 text-cyan-300 border-cyan-400 shadow-[0_0_12px_rgba(0,229,255,0.25)]'
-                    : 'bg-transparent text-[#8888a0] border-[#232336] hover:border-cyan-500/50'
+                    ? 'bg-accent/10 text-accent border-accent shadow-[0_0_12px_rgba(0,229,255,0.25)]'
+                    : 'bg-transparent text-muted border-line hover:border-accent/50'
                 }`}
               >
                 {model.name}
@@ -315,14 +306,14 @@ export default function PromptForm({
       <div>
         <label className={labelClass}>ภาพหลัก (Cover Image)</label>
         <div className="flex items-start gap-4">
-          <div className="w-32 h-32 rounded-lg bg-[#12121c] border border-[#232336] overflow-hidden shrink-0 flex items-center justify-center">
+          <div className="w-32 h-32 rounded-lg bg-surface border border-line overflow-hidden shrink-0 flex items-center justify-center">
             {coverPreview ? (
               <img src={coverPreview} alt="" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-xs text-[#666680] font-mono">no image</span>
+              <span className="text-xs text-faint font-mono">no image</span>
             )}
           </div>
-          <label className="cursor-pointer px-4 py-2.5 rounded-lg text-sm font-mono border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400 transition-all">
+          <label className="cursor-pointer px-4 py-2.5 rounded-lg text-sm font-mono border border-accent/40 text-accent hover:bg-accent/10 hover:border-accent transition-all">
             เลือกไฟล์ภาพ
             <input type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
           </label>
@@ -337,14 +328,14 @@ export default function PromptForm({
           {existingExamples.map((ex) => (
             <div
               key={ex.example_id}
-              className="w-20 h-20 rounded-lg overflow-hidden border border-[#232336]"
+              className="w-20 h-20 rounded-lg overflow-hidden border border-line"
             >
               <img src={ex.file_url} alt="" className="w-full h-full object-cover" />
             </div>
           ))}
 
           {examplePreviews.map((url, idx) => (
-            <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-cyan-500/40">
+            <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-accent/40">
               <img src={url} alt="" className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -357,7 +348,7 @@ export default function PromptForm({
           ))}
         </div>
 
-        <label className="inline-block cursor-pointer px-4 py-2.5 rounded-lg text-sm font-mono border border-[#232336] text-[#8888a0] hover:border-cyan-500/40 hover:text-cyan-300 transition-all">
+        <label className="inline-block cursor-pointer px-4 py-2.5 rounded-lg text-sm font-mono border border-line text-muted hover:border-accent/40 hover:text-accent transition-all">
           + เพิ่มภาพตัวอย่าง
           <input
             type="file"
@@ -377,14 +368,14 @@ export default function PromptForm({
           onChange={(e) => setIsPublic(e.target.checked)}
           className="w-4 h-4 accent-cyan-500"
         />
-        <span className="text-sm text-[#c8c8d4]">เผยแพร่ให้ทุกคนเห็น (Public)</span>
+        <span className="text-sm text-ink-soft">เผยแพร่ให้ทุกคนเห็น (Public)</span>
       </label>
 
       {/* ปุ่ม submit */}
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-3 rounded-lg font-mono text-sm font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-400/60 hover:bg-cyan-500/20 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3 rounded-lg font-mono text-sm font-medium bg-accent/10 text-accent border border-accent/60 hover:bg-accent/20 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {submitting
           ? 'กำลังบันทึก...'

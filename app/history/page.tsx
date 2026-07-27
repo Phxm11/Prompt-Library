@@ -19,10 +19,10 @@ export default async function HistoryPage() {
   if (!user) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-20 text-center">
-        <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-4 uppercase">
-          // usage_history
-        </p>
-        <p className="text-[#8888a0] font-mono text-sm">
+        <h1 className="section-title section-title-center text-3xl font-extrabold text-ink mb-4">
+          ประวัติการใช้งาน
+        </h1>
+        <p className="text-muted font-mono text-sm">
           {'>'} กรุณาเข้าสู่ระบบเพื่อดูประวัติการใช้งานของคุณ
         </p>
       </div>
@@ -38,38 +38,34 @@ export default async function HistoryPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
-      <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-2 uppercase">
-        // usage_history
-      </p>
-      <h1
-        className="text-3xl font-bold mb-1 text-[#f2f2f7]"
-      >
+      <h1 className="animate-spring-up section-title text-4xl font-extrabold mb-1 text-ink">
         ประวัติการใช้งาน
       </h1>
-      <p className="text-[#8888a0] text-sm mb-8">50 รายการล่าสุด</p>
+      <p className="animate-spring-up [animation-delay:60ms] text-muted text-sm mb-8">50 รายการล่าสุด</p>
 
-      {error && <p className="text-fuchsia-400">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
 
       {history && history.length === 0 && (
-        <p className="text-[#8888a0] font-mono text-sm py-12 text-center">
+        <p className="text-muted font-mono text-sm py-12 text-center">
           {'>'} ยังไม่มีประวัติการใช้งาน
         </p>
       )}
 
       <div className="flex flex-col gap-2">
-        {history?.map((h: any) => (
+        {history?.map((h: any, i: number) => (
           <Link
             key={h.history_id}
             href={h.prompts ? `/prompts/${h.prompts.prompt_id}` : '#'}
-            className="flex items-center justify-between px-4 py-3 rounded-lg bg-[#12121c] border border-[#232336] hover:border-cyan-400/60 transition-all"
+            style={{ animationDelay: `${120 + Math.min(i, 12) * 45}ms` }}
+            className="animate-spring-up flex items-center justify-between px-4 py-3 rounded-lg bg-surface border border-line hover:border-accent/60 hover:-translate-y-0.5 transition-[translate,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
           >
             <div>
-              <p className="text-sm text-[#f2f2f7]">{h.prompts?.title ?? 'Prompt ถูกลบแล้ว'}</p>
-              <p className="text-xs text-cyan-400 font-mono mt-0.5">
+              <p className="text-sm text-ink">{h.prompts?.title ?? 'Prompt ถูกลบแล้ว'}</p>
+              <p className="text-xs text-accent font-mono mt-0.5">
                 {actionLabel[h.action_type] ?? h.action_type}
               </p>
             </div>
-            <p className="text-xs text-[#666680] font-mono shrink-0 ml-4">
+            <p className="text-xs text-faint font-mono shrink-0 ml-4">
               {new Date(h.used_at).toLocaleString('th-TH', {
                 dateStyle: 'medium',
                 timeStyle: 'short',

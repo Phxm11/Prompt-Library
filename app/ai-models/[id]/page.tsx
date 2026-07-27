@@ -31,28 +31,28 @@ export default async function AiModelDetailPage({
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
-      <Link href="/ai-models" className="text-sm text-fuchsia-400 hover:underline font-mono">
+      <Link href="/ai-models" className="text-sm text-accent2 hover:underline font-mono">
         ← กลับไปโมเดล AI
       </Link>
 
       <h1
-        className="text-3xl font-bold mt-4 mb-1 text-[#f2f2f7]"
+        className="section-title text-4xl font-extrabold mt-4 mb-1"
       >
         {aiModel.name}
       </h1>
-      <p className="text-[#8888a0] text-sm mb-8 font-mono">{aiModel.provider}</p>
+      <p className="text-muted text-sm mb-8 font-mono">{aiModel.provider}</p>
 
-      {error && <p className="text-fuchsia-400">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
 
       {prompts.length === 0 && (
-        <p className="text-[#8888a0] font-mono text-sm py-12 text-center">
+        <p className="text-muted font-mono text-sm py-12 text-center">
           {'>'} ยังไม่มี Prompt สำหรับโมเดลนี้
         </p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {prompts.map((prompt: any) => (
-          <PromptCard key={prompt.prompt_id} prompt={prompt} />
+        {prompts.map((prompt: any, i: number) => (
+          <PromptCard key={prompt.prompt_id} prompt={prompt} index={i} />
         ))}
       </div>
     </div>

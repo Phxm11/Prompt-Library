@@ -112,9 +112,9 @@ export default function LikeButton({
         insideLink
           ? 'w-9 h-9 rounded-lg backdrop-blur-md border justify-center ' +
             (liked
-              ? 'bg-fuchsia-500/20 border-fuchsia-400 text-fuchsia-300'
-              : 'bg-[#0a0a0f]/80 border-fuchsia-400/30 text-[#c8c8d4] hover:border-fuchsia-400/60 hover:text-fuchsia-300')
-          : 'text-[#c8c8d4] hover:text-fuchsia-300'
+              ? 'bg-accent2/20 border-accent2 text-accent2'
+              : 'bg-base/80 border-accent2/30 text-ink-soft hover:border-accent2/60 hover:text-accent2')
+          : 'text-ink-soft hover:text-accent2'
       }`}
     >
       <svg width={size} height={size} viewBox="0 0 24 24" fill={liked ? '#ff3ec8' : 'none'} stroke={liked ? '#ff3ec8' : 'currentColor'} strokeWidth="2" className="transition-colors">

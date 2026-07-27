@@ -20,23 +20,19 @@ export default async function NewPromptPage() {
   ])
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
+    <div className="min-h-screen bg-base relative overflow-hidden">
       <div
-        className="absolute inset-0 opacity-[0.06] pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
+          opacity: 'var(--grid-opacity)',
           backgroundImage:
-            'linear-gradient(#00e5ff 1px, transparent 1px), linear-gradient(90deg, #00e5ff 1px, transparent 1px)',
+            'linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px)',
           backgroundSize: '48px 48px',
         }}
       />
 
       <div className="relative max-w-2xl mx-auto px-6 py-12">
-        <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-2 uppercase">
-          // new_prompt
-        </p>
-        <h1
-          className="text-3xl font-bold mb-8 text-[#f2f2f7]"
-        >
+        <h1 className="section-title text-4xl font-extrabold mb-8 text-ink">
           เพิ่ม Prompt ใหม่
         </h1>
 

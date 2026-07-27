@@ -1,5 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import Icon from '@/app/components/Icon'
+
+// ผูกไอคอนกับ slug ของประเภทสื่อ ถ้ามีประเภทใหม่ที่ยังไม่ได้แมป จะใช้ 'grid' แทน
+const mediaIcons: Record<string, 'image' | 'video' | 'audio' | 'document' | 'text'> = {
+  image: 'image',
+  video: 'video',
+  audio: 'audio',
+  document: 'document',
+  text: 'text',
+}
 
 export default async function MediaTypesPage() {
   const supabase = await createClient()
@@ -22,29 +32,34 @@ export default async function MediaTypesPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
-      <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-2 uppercase">
-        // media_types
-      </p>
-      <h1
-        className="text-3xl font-bold mb-1 text-[#f2f2f7]"
-      >
+      <h1 className="animate-spring-up section-title text-4xl font-extrabold mb-1 text-ink">
         ประเภทสื่อ
       </h1>
-      <p className="text-[#8888a0] text-sm mb-8">เลือกดู Prompt ตามรูปแบบผลลัพธ์ที่ต้องการ</p>
+      <p className="animate-spring-up [animation-delay:60ms] text-muted text-sm mb-8">
+        เลือกดู Prompt ตามรูปแบบผลลัพธ์ที่ต้องการ
+      </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mediaTypes?.map((mt) => (
+        {mediaTypes?.map((mt, i) => (
           <Link
             key={mt.media_type_id}
             href={`/media-types/${mt.slug}`}
-            className="group p-6 rounded-xl bg-[#12121c] border border-[#232336] hover:border-cyan-400/60 hover:shadow-[0_0_24px_rgba(0,229,255,0.2)] transition-all"
+            style={{ animationDelay: `${120 + Math.min(i, 12) * 55}ms` }}
+            className="animate-spring-up group p-6 rounded-xl bg-surface border border-line hover:border-accent/60 hover:shadow-[0_10px_30px_-10px_color-mix(in_srgb,var(--accent)_45%,transparent)] hover:-translate-y-1 transition-[translate,box-shadow,border-color] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
           >
-            <h3 className="font-semibold text-lg text-[#f2f2f7] group-hover:text-cyan-300 transition-colors">
-              {mt.name}
-            </h3>
-            <p className="text-[#666680] text-sm font-mono mt-1">
-              {countMap[mt.media_type_id] ?? 0} prompts
-            </p>
+            <div className="flex items-center gap-3.5">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-accent/30 bg-accent/10 text-accent transition-colors group-hover:border-accent/60 group-hover:bg-accent/15">
+                <Icon name={mediaIcons[mt.slug] ?? 'grid'} size={21} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-lg text-ink group-hover:text-accent transition-colors truncate">
+                  {mt.name}
+                </h3>
+                <p className="text-faint text-sm font-mono mt-0.5">
+                  {countMap[mt.media_type_id] ?? 0} prompts
+                </p>
+              </div>
+            </div>
           </Link>
         ))}
       </div>

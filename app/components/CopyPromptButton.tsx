@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { showToast } from '@/app/components/Toast'
 import type { User } from '@supabase/supabase-js'
 
 type CopyPromptButtonProps = {
@@ -38,6 +39,7 @@ export default function CopyPromptButton({
     try {
       await navigator.clipboard.writeText(promptText)
       setCopied(true)
+      showToast('คัดลอก Prompt แล้ว')
       setTimeout(() => setCopied(false), 2000)
 
       setCopyCount((prev) => prev + 1)
@@ -56,6 +58,7 @@ export default function CopyPromptButton({
       router.refresh()
     } catch (err) {
       console.error('Copy failed:', err)
+      showToast('คัดลอกไม่สำเร็จ ลองใหม่อีกครั้ง', 'error')
       setCopyCount((prev) => Math.max(prev - 1, 0))
     }
   }
@@ -70,8 +73,8 @@ export default function CopyPromptButton({
           copied
             ? 'bg-emerald-500/10 text-emerald-300 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
             : locked
-            ? 'bg-[#12121c] text-[#8888a0] border-[#232336] hover:border-cyan-400/40 hover:text-cyan-300'
-            : 'bg-cyan-500/10 text-cyan-300 border-cyan-400/60 hover:bg-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]'
+            ? 'bg-surface text-muted border-line hover:border-accent/40 hover:text-accent'
+            : 'bg-accent/10 text-accent border-accent/60 hover:bg-accent/20 hover:border-accent hover:shadow-[0_0_20px_rgba(0,229,255,0.3)]'
         }`}
       >
         {copied ? (
@@ -108,7 +111,7 @@ export default function CopyPromptButton({
         )}
       </button>
 
-      <p className="text-center text-xs text-[#666680] font-mono mt-2">
+      <p className="text-center text-xs text-faint font-mono mt-2">
         📋 ถูกคัดลอกไปแล้ว {copyCount} ครั้ง
       </p>
     </div>

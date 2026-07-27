@@ -12,33 +12,31 @@ export default async function AiModelsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
-      <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-2 uppercase">
-        // ai_models
-      </p>
-      <h1
-        className="text-3xl font-bold mb-1 text-[#f2f2f7]"
-      >
+      <h1 className="animate-spring-up section-title text-4xl font-extrabold mb-1 text-ink">
         โมเดล AI
       </h1>
-      <p className="text-[#8888a0] text-sm mb-8">เลือกดู Prompt ที่ใช้ได้กับโมเดลนี้</p>
+      <p className="animate-spring-up [animation-delay:60ms] text-muted text-sm mb-8">
+        เลือกดู Prompt ที่ใช้ได้กับโมเดลนี้
+      </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {aiModels?.map((model) => (
+        {aiModels?.map((model, i) => (
           <Link
             key={model.ai_model_id}
             href={`/ai-models/${model.ai_model_id}`}
-            className="group p-6 rounded-xl bg-[#12121c] border border-[#232336] hover:border-fuchsia-400/60 hover:shadow-[0_0_24px_rgba(255,62,200,0.2)] transition-all flex items-center gap-4"
+            style={{ animationDelay: `${120 + Math.min(i, 12) * 55}ms` }}
+            className="animate-spring-up group p-6 rounded-xl bg-surface border border-line hover:border-accent2/60 hover:shadow-[0_10px_30px_-10px_color-mix(in_srgb,var(--accent-2)_45%,transparent)] hover:-translate-y-1 transition-[translate,box-shadow,border-color] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] flex items-center gap-4"
           >
             {model.logo_url ? (
               <img src={model.logo_url} alt="" className="w-10 h-10 rounded-lg shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/30 shrink-0" />
+              <div className="w-10 h-10 rounded-lg bg-accent2/10 border border-accent2/30 shrink-0" />
             )}
             <div>
-              <h3 className="font-semibold text-[#f2f2f7] group-hover:text-fuchsia-300 transition-colors">
+              <h3 className="font-semibold text-ink group-hover:text-accent2 transition-colors">
                 {model.name}
               </h3>
-              <p className="text-[#666680] text-sm font-mono">{model.provider}</p>
+              <p className="text-faint text-sm font-mono">{model.provider}</p>
             </div>
           </Link>
         ))}

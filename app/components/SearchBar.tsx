@@ -30,7 +30,7 @@ export default function SearchBar({
         fill="none"
         stroke="currentColor"
         strokeWidth="2"
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666680] pointer-events-none"
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-faint pointer-events-none"
       >
         <circle cx="11" cy="11" r="7" />
         <path d="m21 21-4.3-4.3" />
@@ -40,7 +40,7 @@ export default function SearchBar({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="ค้นหา prompt..."
-        className="w-full bg-[#12121c] border border-[#232336] rounded-lg pl-9 pr-3 py-2 text-sm text-[#f2f2f7] placeholder:text-[#666680] font-mono focus:outline-none focus:border-cyan-400/60 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)] transition-all"
+        className="w-full bg-surface border border-line rounded-lg pl-9 pr-3 py-2 text-sm text-ink placeholder:text-faint font-mono focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)] transition-all"
       />
     </form>
   )

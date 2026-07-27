@@ -27,7 +27,7 @@ export default function StarRating({ value, onChange, size = 20, readOnly = fals
               height={size}
               viewBox="0 0 24 24"
               fill={filled ? '#facc15' : 'none'}
-              stroke={filled ? '#facc15' : '#666680'}
+              stroke={filled ? '#facc15' : 'var(--faint)'}
               strokeWidth="1.5"
             >
               <path d="M12 2.5l2.9 6.6 7.1.7-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7-5.4-4.7 7.1-.7z" />

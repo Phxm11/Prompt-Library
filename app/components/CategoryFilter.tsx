@@ -29,8 +29,8 @@ export default function CategoryFilter({ categories }: { categories: Category[] 
         onClick={() => handleFilter(null)}
         className={`px-4 py-1.5 rounded-full text-sm font-mono border transition-all ${
           !activeSlug
-            ? 'bg-cyan-500/10 text-cyan-300 border-cyan-400 shadow-[0_0_16px_rgba(0,229,255,0.35)]'
-            : 'bg-transparent text-[#8888a0] border-[#232336] hover:border-cyan-500/50 hover:text-cyan-300'
+            ? 'bg-accent/10 text-accent border-accent shadow-[0_0_16px_rgba(0,229,255,0.35)]'
+            : 'bg-transparent text-muted border-line hover:border-accent/50 hover:text-accent'
         }`}
       >
         ทั้งหมด
@@ -42,8 +42,8 @@ export default function CategoryFilter({ categories }: { categories: Category[] 
           onClick={() => handleFilter(cat.slug)}
           className={`px-4 py-1.5 rounded-full text-sm font-mono border transition-all ${
             activeSlug === cat.slug
-              ? 'bg-cyan-500/10 text-cyan-300 border-cyan-400 shadow-[0_0_16px_rgba(0,229,255,0.35)]'
-              : 'bg-transparent text-[#8888a0] border-[#232336] hover:border-cyan-500/50 hover:text-cyan-300'
+              ? 'bg-accent/10 text-accent border-accent shadow-[0_0_16px_rgba(0,229,255,0.35)]'
+              : 'bg-transparent text-muted border-line hover:border-accent/50 hover:text-accent'
           }`}
         >
           {cat.name}

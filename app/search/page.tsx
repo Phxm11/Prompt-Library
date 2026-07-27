@@ -37,12 +37,7 @@ export default async function SearchPage({
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
-      <p className="text-xs tracking-[0.3em] text-cyan-400/80 font-mono mb-2 uppercase">
-        // search
-      </p>
-      <h1
-        className="text-3xl font-bold mb-6 text-[#f2f2f7]"
-      >
+      <h1 className="section-title text-4xl font-extrabold mb-6 text-ink">
         ค้นหา Prompt
       </h1>
 
@@ -51,25 +46,25 @@ export default async function SearchPage({
       </div>
 
       {!query && (
-        <p className="text-[#8888a0] font-mono text-sm py-12 text-center">
+        <p className="text-muted font-mono text-sm py-12 text-center">
           {'>'} พิมพ์คำค้นหาด้านบนเพื่อเริ่มค้นหา
         </p>
       )}
 
       {query && (
-        <p className="text-[#666680] text-sm font-mono mb-4">
-          ผลการค้นหาสำหรับ "<span className="text-cyan-300">{query}</span>"
+        <p className="text-faint text-sm font-mono mb-4">
+          ผลการค้นหาสำหรับ "<span className="text-accent">{query}</span>"
         </p>
       )}
 
       {error && (
-        <p className="text-fuchsia-400 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg px-4 py-3">
+        <p className="text-accent2 bg-accent2/10 border border-accent2/30 rounded-lg px-4 py-3">
           เกิดข้อผิดพลาด: {error}
         </p>
       )}
 
       {query && !error && prompts.length === 0 && (
-        <p className="text-[#8888a0] font-mono text-sm py-12 text-center">
+        <p className="text-muted font-mono text-sm py-12 text-center">
           {'>'} ไม่พบ Prompt ที่ตรงกับคำค้นหานี้ ลองใช้คำอื่นดูครับ
         </p>
       )}
