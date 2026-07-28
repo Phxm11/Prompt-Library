@@ -13,8 +13,7 @@ export default function NotFound() {
           Prompt หรือหน้าที่คุณกำลังหาอาจถูกลบไปแล้ว หรือ URL ไม่ถูกต้อง
         </p>
 
-        <a
-          href="/"
+        <a href=""
           className="inline-block px-5 py-2.5 rounded-lg font-mono text-sm bg-accent/10 text-accent border border-accent/60 hover:bg-accent/20 hover:shadow-[0_0_16px_rgba(0,229,255,0.25)] transition-all"
         >
           ← กลับหน้าหลัก

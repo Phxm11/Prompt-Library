@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
 import SearchBar from '@/app/components/SearchBar'
+import { promptSearchFilter } from '@/lib/promptSearch'
 
 const PAGE_SIZE = 12
 
@@ -22,7 +23,7 @@ export default async function SearchPage({
       .from('prompts')
       .select('*, categories(name), media_types(name)', { count: 'exact' })
       .eq('is_public', true)
-      .textSearch('search_vector', query, { type: 'websearch', config: 'simple' })
+      .or(promptSearchFilter(query))
       .order('created_at', { ascending: false })
       .order('prompt_id', { ascending: true })
       .range(0, PAGE_SIZE - 1)

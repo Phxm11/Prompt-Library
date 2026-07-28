@@ -16,7 +16,13 @@ function apply(theme: Theme) {
   }
 }
 
-export default function ThemeToggle() {
+/**
+ * สถานะธีมปัจจุบัน + ตัวสลับ
+ *
+ * แยกออกมาเป็น hook เพราะมีที่ใช้สองแห่ง คือปุ่มบน navbar กับแถวในเมนูผู้ใช้
+ * ทั้งสองที่อ่านค่าจาก data-theme บน <html> ตัวเดียวกัน จึงไม่มีทางเพี้ยนกัน
+ */
+export function useTheme() {
   // ต้องตรงกับค่าเริ่มต้นที่ script ใน layout ตั้งไว้ ไม่งั้นไอคอนจะสลับผิดตอน hydrate
   const [theme, setTheme] = useState<Theme>('light')
 
@@ -31,7 +37,11 @@ export default function ThemeToggle() {
     apply(next)
   }
 
-  const isDark = theme === 'dark'
+  return { theme, isDark: theme === 'dark', toggle }
+}
+
+export default function ThemeToggle() {
+  const { isDark, toggle } = useTheme()
 
   return (
     <button

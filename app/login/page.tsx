@@ -1,104 +1,58 @@
-'use client'
+import Link from 'next/link'
+import OAuthLoginButton from '@/app/components/OAuthLoginButton'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import FacebookLoginButton from '@/app/components/FacebookLoginButton'
+/**
+ * รับเฉพาะ path ภายในเว็บเท่านั้น
+ * ถ้าปล่อยให้ใส่ URL เต็มได้ จะกลายเป็นช่องโหว่ open redirect
+ * (ส่งลิงก์ /login?next=https://evil.com แล้วพาเหยื่อออกไปเว็บอื่นหลังล็อกอิน)
+ */
+function safeNext(next?: string) {
+  if (!next) return undefined
+  if (!next.startsWith('/') || next.startsWith('//')) return undefined
+  return next
+}
 
-export default function LoginPage() {
-  const router = useRouter()
-  const supabase = createClient()
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setSubmitting(true)
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (signInError) {
-      setError(
-        signInError.message === 'Invalid login credentials'
-          ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
-          : signInError.message
-      )
-      setSubmitting(false)
-      return
-    }
-
-    router.push('/')
-    router.refresh()
-  }
-
-  const inputClass =
-    'w-full bg-surface border border-line rounded-lg px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(0,229,255,0.1)] transition-all'
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>
+}) {
+  const params = await searchParams
+  const next = safeNext(params.next)
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="section-title text-2xl font-extrabold text-ink mb-6">
+        <h1 className="animate-spring-up section-title section-title-center text-3xl font-extrabold mb-2">
           เข้าสู่ระบบ
         </h1>
+        <p className="animate-spring-up [animation-delay:60ms] text-sm text-muted text-center mb-8">
+          เข้าใช้งานด้วยบัญชีที่มีอยู่แล้ว ไม่ต้องตั้งรหัสผ่านใหม่
+        </p>
 
-        <FacebookLoginButton />
+        {params.error && (
+          <p className="animate-spring-up [animation-delay:100ms] mb-5 rounded-lg border border-accent2/30 bg-accent2/10 px-4 py-3 text-sm text-accent2">
+            เชื่อมต่อบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง
+          </p>
+        )}
 
-        <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-line" />
-          <span className="text-xs text-faint font-mono">หรือ</span>
-          <div className="flex-1 h-px bg-line" />
+        <div className="space-y-3">
+          <div className="animate-spring-up [animation-delay:140ms]">
+            <OAuthLoginButton provider="google" next={next} />
+          </div>
+          <div className="animate-spring-up [animation-delay:200ms]">
+            <OAuthLoginButton provider="facebook" next={next} />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-accent2/10 border border-accent2/30 text-accent2 text-sm rounded-lg px-3 py-2">
-              {error}
-            </div>
-          )}
+        <p className="animate-spring-up [animation-delay:260ms] mt-6 text-center text-xs text-faint leading-relaxed">
+          ถ้ายังไม่เคยใช้งาน ระบบจะสร้างบัญชีให้อัตโนมัติเมื่อเข้าสู่ระบบครั้งแรก
+        </p>
 
-          <div>
-            <label className="text-xs font-mono text-muted mb-1.5 block">อีเมล</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-mono text-muted mb-1.5 block">รหัสผ่าน</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3 rounded-lg font-mono text-sm bg-accent/10 text-accent border border-accent/60 hover:bg-accent/20 hover:shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all disabled:opacity-50"
-          >
-            {submitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
-          </button>
-        </form>
-
-        <p className="text-sm text-muted mt-6 text-center">
-          ยังไม่มีบัญชี?{' '}
-          <a href="/signup" className="text-accent hover:text-accent">
-            สมัครสมาชิก
-          </a>
+        <p className="animate-spring-up [animation-delay:320ms] mt-6 text-center">
+          <Link href="/home" className="text-sm font-mono text-accent hover:text-accent-soft">
+            ← กลับไปดู Prompt
+          </Link>
         </p>
       </div>
     </div>

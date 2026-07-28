@@ -9,26 +9,13 @@ type Prompt = {
   title: string
   prompt_text: string
   cover_image_url: string | null
+  cover_position?: string | null
+  status?: string | null
   view_count: number
   like_count: number
   copy_count?: number
   categories: { name: string } | null
   media_types: { name: string } | null
-}
-
-type HistoryRow = {
-  history_id: string
-  action_type: string
-  used_at: string
-  prompts: { prompt_id: string; title: string }[] | null
-}
-
-type HistoryItem = Omit<HistoryRow, 'prompts'> & {
-  prompts: { prompt_id: string; title: string } | null
-}
-
-const actionLabels: Record<string, string> = {
-  view: 'ดูรายละเอียด', copy: 'คัดลอก Prompt', like: 'เพิ่มรายการโปรด', use: 'ใช้งาน Prompt', download: 'ดาวน์โหลด',
 }
 
 export default async function ProfilePage() {
@@ -43,20 +30,15 @@ export default async function ProfilePage() {
     </main>
   )
 
-  const [createdResult, favoritesResult, historyResult, profileResult] = await Promise.all([
-    supabase.from('prompts').select('prompt_id, title, prompt_text, cover_image_url, view_count, like_count, copy_count, categories(name), media_types(name)', { count: 'exact' }).eq('user_id', user.id).order('created_at', { ascending: false }).limit(6),
+  const [createdResult, favoritesResult, profileResult] = await Promise.all([
+    supabase.from('prompts').select('prompt_id, title, prompt_text, cover_image_url, cover_position, status, view_count, like_count, copy_count, categories(name), media_types(name)', { count: 'exact' }).eq('user_id', user.id).order('created_at', { ascending: false }).limit(6),
     supabase.from('favorites').select('favorite_id', { count: 'exact', head: true }).eq('user_id', user.id),
-    supabase.from('usage_history').select('history_id, action_type, used_at, prompts(prompt_id, title)').eq('user_id', user.id).order('used_at', { ascending: false }).limit(5),
-    supabase.from('profiles').select('display_name, avatar_url').eq('id', user.id).maybeSingle(),
+    supabase.from('profiles').select('username, display_name, avatar_url, bio, username_changed_at').eq('id', user.id).maybeSingle(),
   ])
 
   const profile = profileResult.data
 
   const createdPrompts = (createdResult.data ?? []) as unknown as Prompt[]
-  const history = ((historyResult.data ?? []) as unknown as HistoryRow[]).map((item) => ({
-    ...item,
-    prompts: item.prompts?.[0] ?? null,
-  }))
   const totalViews = createdPrompts.reduce((sum, prompt) => sum + (prompt.view_count ?? 0), 0)
   const totalLikes = createdPrompts.reduce((sum, prompt) => sum + (prompt.like_count ?? 0), 0)
   const stats = [
@@ -69,19 +51,36 @@ export default async function ProfilePage() {
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12">
-      <section className="rounded-2xl border border-line bg-surface p-6 sm:p-8 mb-10 relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-52 h-52 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
-        <h1 className="section-title text-4xl font-extrabold text-ink mb-6">โปรไฟล์ของฉัน</h1>
+      <section className="rounded-2xl border border-line bg-surface p-6 sm:p-9 mb-10 relative overflow-hidden">
+        {/* แสงเรือง ๆ สองมุมให้การ์ดไม่แบน */}
+        <div className="absolute -top-24 -right-20 w-72 h-72 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-28 -left-24 w-72 h-72 bg-accent2/10 rounded-full blur-3xl pointer-events-none" />
 
-        <ProfileEditor
-          userId={user.id}
-          email={user.email ?? ''}
-          hasProfile={Boolean(profile)}
-          initialDisplayName={profile?.display_name ?? ''}
-          initialAvatarUrl={profile?.avatar_url ?? null}
-        />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
-          {stats.map((stat, index) => <div key={stat.label} className="rounded-xl border border-line bg-base/70 px-4 py-4"><Icon name={statIcons[index]} size={18} className={`${stat.color} mb-2`} /><p className={`text-2xl font-bold ${stat.color}`}>{stat.value.toLocaleString('th-TH')}</p><p className="text-xs text-muted font-mono mt-1">{stat.label}</p></div>)}
+        <div className="relative">
+          <h1 className="section-title text-4xl font-extrabold text-ink mb-7">โปรไฟล์ของฉัน</h1>
+
+          <ProfileEditor
+            userId={user.id}
+            email={user.email ?? ''}
+            username={profile?.username ?? ''}
+            usernameChangedAt={profile?.username_changed_at ?? null}
+            initialDisplayName={profile?.display_name ?? ''}
+            initialAvatarUrl={profile?.avatar_url ?? null}
+            initialBio={profile?.bio ?? ''}
+          />
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-8">
+            {stats.map((stat, index) => (
+              <div
+                key={stat.label}
+                className="rounded-xl border border-line bg-base/70 px-4 py-4 transition-colors hover:border-accent/40"
+              >
+                <Icon name={statIcons[index]} size={18} className={`${stat.color} mb-2`} />
+                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value.toLocaleString('th-TH')}</p>
+                <p className="text-xs text-muted font-mono mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -90,9 +89,8 @@ export default async function ProfilePage() {
         {createdPrompts.length === 0 ? <div className="rounded-xl border border-dashed border-line text-center py-12 text-muted">ยังไม่มี Prompt ที่สร้างไว้</div> : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">{createdPrompts.map((prompt, i) => <PromptCard key={prompt.prompt_id} prompt={prompt} index={i} />)}</div>}
       </section>
 
-      <section className="grid lg:grid-cols-2 gap-6">
+      <section>
         <div className="rounded-xl border border-line bg-surface p-5"><div className="flex items-center justify-between mb-4"><h2 className="text-xl font-bold text-ink">รายการโปรด</h2><Link href="/favorites" className="text-sm text-accent2 hover:text-accent2">ดูทั้งหมด →</Link></div><p className="text-muted text-sm">คุณบันทึก Prompt ที่ชอบไว้ {favoritesResult.count ?? 0} รายการ</p></div>
-        <div className="rounded-xl border border-line bg-surface p-5"><div className="flex items-center justify-between mb-4"><h2 className="text-xl font-bold text-ink">ประวัติล่าสุด</h2><Link href="/history" className="text-sm text-accent hover:text-accent-soft">ดูทั้งหมด →</Link></div>{history.length === 0 ? <p className="text-muted text-sm">ยังไม่มีประวัติการใช้งาน</p> : <div className="space-y-3">{history.map((item) => <Link key={item.history_id} href={item.prompts ? `/prompts/${item.prompts.prompt_id}` : '/history'} className="block group"><p className="text-sm text-ink-soft group-hover:text-accent truncate">{item.prompts?.title ?? 'Prompt ที่ถูกลบแล้ว'}</p><p className="text-xs text-faint mt-0.5">{actionLabels[item.action_type] ?? item.action_type} · {new Date(item.used_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}</p></Link>)}</div>}</div>
       </section>
     </main>
   )

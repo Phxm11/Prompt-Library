@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ConfirmDialog from '@/app/components/ConfirmDialog'
+import { showToast } from '@/app/components/Toast'
 
 export default function PromptOwnerActions({
   promptId,
@@ -16,7 +18,7 @@ export default function PromptOwnerActions({
 
   const [canManage, setCanManage] = useState(false)
   const [checked, setChecked] = useState(false)
-  const [confirming, setConfirming] = useState(false)
+  const [askDelete, setAskDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
@@ -58,23 +60,17 @@ export default function PromptOwnerActions({
   }, [promptId, ownerId])
 
   async function handleDelete() {
-    if (!confirming) {
-      setConfirming(true)
-      setTimeout(() => setConfirming(false), 3000)
-      return
-    }
-
     setDeleting(true)
     const { error } = await supabase.from('prompts').delete().eq('prompt_id', promptId)
 
     if (error) {
-      alert('ลบไม่สำเร็จ: ' + error.message)
       setDeleting(false)
-      setConfirming(false)
+      showToast(`ลบไม่สำเร็จ: ${error.message}`, 'error')
       return
     }
 
-    router.push('/')
+    showToast('ลบ Prompt แล้ว')
+    router.push('/home')
     router.refresh()
   }
 
@@ -85,7 +81,7 @@ export default function PromptOwnerActions({
     <div className="flex items-center gap-2 mb-4">
       <a
         href={`/prompts/${promptId}/edit`}
-        className="px-3.5 py-1.5 rounded-lg text-xs font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all flex items-center gap-1.5"
+        className="px-3.5 py-1.5 rounded-lg text-xs font-mono bg-accent/10 text-accent border border-accent/30 hover:bg-accent/20 transition-all flex items-center gap-1.5"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -95,19 +91,25 @@ export default function PromptOwnerActions({
       </a>
 
       <button
-        onClick={handleDelete}
+        onClick={() => setAskDelete(true)}
         disabled={deleting}
-        className={`px-3.5 py-1.5 rounded-lg text-xs font-mono border transition-all disabled:opacity-50 flex items-center gap-1.5 ${
-          confirming
-            ? 'bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400'
-            : 'bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/20'
-        }`}
+        className="px-3.5 py-1.5 rounded-lg text-xs font-mono border transition-all disabled:opacity-50 flex items-center gap-1.5 bg-accent2/10 text-accent2 border-accent2/30 hover:bg-accent2/20"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" />
         </svg>
-        {deleting ? 'กำลังลบ...' : confirming ? 'ยืนยันลบ Prompt นี้?' : 'ลบ Prompt'}
+        ลบ Prompt
       </button>
+
+      <ConfirmDialog
+        open={askDelete}
+        busy={deleting}
+        title="ลบ Prompt นี้?"
+        description="Prompt จะถูกลบถาวร พร้อมรีวิวและรายการโปรดที่ผูกอยู่ กู้คืนไม่ได้"
+        confirmLabel="ลบถาวร"
+        onConfirm={handleDelete}
+        onCancel={() => setAskDelete(false)}
+      />
     </div>
   )
 }

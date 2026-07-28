@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PromptForm from '@/app/components/PromptForm'
+import DraftList, { type Draft } from '@/app/components/DraftList'
 
 export default async function NewPromptPage() {
   const supabase = await createClient()
@@ -13,11 +14,20 @@ export default async function NewPromptPage() {
     redirect('/login?next=/prompts/new')
   }
 
-  const [{ data: categories }, { data: mediaTypes }, { data: aiModels }] = await Promise.all([
-    supabase.from('categories').select('category_id, name').eq('is_active', true).order('sort_order'),
-    supabase.from('media_types').select('media_type_id, name').order('name'),
-    supabase.from('ai_models').select('ai_model_id, name').eq('is_active', true).order('name'),
-  ])
+  const [{ data: categories }, { data: mediaTypes }, { data: aiModels }, { data: drafts }] =
+    await Promise.all([
+      supabase.from('categories').select('category_id, name').eq('is_active', true).order('sort_order'),
+      supabase.from('media_types').select('media_type_id, name').order('name'),
+      supabase.from('ai_models').select('ai_model_id, name').eq('is_active', true).order('name'),
+      // ฉบับร่างของตัวเอง เอามาให้เลือกเขียนต่อได้เลย ไม่ต้องไปตามหาในหน้าโปรไฟล์
+      supabase
+        .from('prompts')
+        .select('prompt_id, title, cover_image_url, cover_position, updated_at, created_at')
+        .eq('user_id', user.id)
+        .eq('status', 'draft')
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .limit(12),
+    ])
 
   return (
     <div className="min-h-screen bg-base relative overflow-hidden">
@@ -32,9 +42,11 @@ export default async function NewPromptPage() {
       />
 
       <div className="relative max-w-2xl mx-auto px-6 py-12">
-        <h1 className="section-title text-4xl font-extrabold mb-8 text-ink">
+        <h1 className="animate-spring-up section-title text-4xl font-extrabold mb-8 text-ink">
           เพิ่ม Prompt ใหม่
         </h1>
+
+        <DraftList drafts={(drafts ?? []) as Draft[]} />
 
         <PromptForm
           categories={(categories ?? []).map((c) => ({ id: c.category_id, name: c.name }))}

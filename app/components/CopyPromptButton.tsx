@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/components/Toast'
+import { recordCopy } from '@/lib/recordCopy'
 import type { User } from '@supabase/supabase-js'
 
 type CopyPromptButtonProps = {
@@ -42,24 +43,15 @@ export default function CopyPromptButton({
       showToast('คัดลอก Prompt แล้ว')
       setTimeout(() => setCopied(false), 2000)
 
-      setCopyCount((prev) => prev + 1)
+      const { counted } = await recordCopy(supabase, promptId)
 
-      await supabase.rpc('increment_copy_count', { prompt_id_input: promptId })
-
-      const { data } = await supabase.auth.getUser()
-      const user: User | null = data.user
-
-      await supabase.from('usage_history').insert({
-        prompt_id: promptId,
-        user_id: user?.id ?? null,
-        action_type: 'copy',
-      })
-
-      router.refresh()
+      if (counted) {
+        setCopyCount((prev) => prev + 1)
+        router.refresh()
+      }
     } catch (err) {
       console.error('Copy failed:', err)
       showToast('คัดลอกไม่สำเร็จ ลองใหม่อีกครั้ง', 'error')
-      setCopyCount((prev) => Math.max(prev - 1, 0))
     }
   }
 
@@ -111,8 +103,9 @@ export default function CopyPromptButton({
         )}
       </button>
 
+      {/* ตัวเลขนี้คือ "จำนวนคน" ไม่ใช่จำนวนครั้ง คนเดิมกดซ้ำไม่ทำให้เพิ่ม */}
       <p className="text-center text-xs text-faint font-mono mt-2">
-        📋 ถูกคัดลอกไปแล้ว {copyCount} ครั้ง
+        📋 มี {copyCount} คนคัดลอกไปใช้
       </p>
     </div>
   )

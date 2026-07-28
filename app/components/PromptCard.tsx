@@ -5,6 +5,8 @@ import Link from 'next/link'
 import LikeButton from '@/app/components/LikeButton'
 import Icon from '@/app/components/Icon'
 import { showToast } from '@/app/components/Toast'
+import { createClient } from '@/lib/supabase/client'
+import { recordCopy } from '@/lib/recordCopy'
 
 type PromptCardProps = {
   prompt: {
@@ -12,6 +14,9 @@ type PromptCardProps = {
     title: string
     prompt_text: string
     cover_image_url: string | null
+    cover_position?: string | null
+    cover_zoom?: number | null
+    status?: string | null
     view_count: number
     like_count: number
     copy_count?: number
@@ -28,15 +33,24 @@ const MAX_STAGGER_STEPS = 12
 
 export default function PromptCard({ prompt, index = 0 }: PromptCardProps) {
   const [copied, setCopied] = useState(false)
+  // เก็บยอดไว้ใน state เพื่อให้ตัวเลขบนการ์ดขยับทันทีที่กดคัดลอก โดยไม่ต้องรีโหลดหน้า
+  const [copyCount, setCopyCount] = useState(prompt.copy_count)
+  const supabase = createClient()
 
   async function handleQuickCopy(e: React.MouseEvent) {
     e.preventDefault() // กันไม่ให้ลิงก์ทำงานตอนกดปุ่ม copy
     e.stopPropagation()
     try {
+      // เขียนคลิปบอร์ดก่อนเสมอ ห้ามมี await คั่นก่อนหน้านี้
+      // ไม่งั้นบางเบราว์เซอร์จะถือว่าหลุดจากการกดของผู้ใช้แล้วสั่งคัดลอกไม่ได้
       await navigator.clipboard.writeText(prompt.prompt_text)
       setCopied(true)
       showToast('คัดลอก Prompt แล้ว')
       setTimeout(() => setCopied(false), 1500)
+
+      // นับยอดด้วยกติกาเดียวกับปุ่มในหน้ารายละเอียด คือคนละ 1 ครั้ง
+      const { counted } = await recordCopy(supabase, prompt.prompt_id)
+      if (counted) setCopyCount((prev) => (typeof prev === 'number' ? prev + 1 : prev))
     } catch (err) {
       console.error('Copy failed:', err)
       showToast('คัดลอกไม่สำเร็จ ลองใหม่อีกครั้ง', 'error')
@@ -71,6 +85,10 @@ export default function PromptCard({ prompt, index = 0 }: PromptCardProps) {
             <img
               src={prompt.cover_image_url}
               alt={prompt.title}
+              style={{
+                objectPosition: prompt.cover_position ?? '50% 50%',
+                transform: `scale(${prompt.cover_zoom ?? 1})`,
+              }}
               className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08]"
             />
           </ViewTransition>
@@ -79,6 +97,19 @@ export default function PromptCard({ prompt, index = 0 }: PromptCardProps) {
             no_preview.img
           </div>
         )}
+
+        {/* ป้ายบอกว่ายังเป็นฉบับร่าง เห็นเฉพาะเจ้าของเพราะคนอื่นมองไม่เห็น prompt ที่ยังไม่เผยแพร่ */}
+
+        {prompt.status === 'draft' && (
+
+          <span className="absolute top-3 left-3 z-10 rounded-full border border-accent2/50 bg-base/85 px-2.5 py-1 font-mono text-[11px] text-accent2 backdrop-blur">
+
+            ฉบับร่าง
+
+          </span>
+
+        )}
+
 
         {/* overlay ไล่สีเข้มด้านล่างภาพ เพื่อให้ปุ่มอ่านง่าย */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -134,7 +165,7 @@ export default function PromptCard({ prompt, index = 0 }: PromptCardProps) {
         <div className="flex items-center justify-between mt-auto pt-3 border-t border-line">
           <div className="flex items-center gap-3 text-xs text-faint font-mono">
             <span className="flex items-center gap-1"><Icon name="eye" size={14} />{prompt.view_count}</span>
-            {typeof prompt.copy_count === 'number' && <span className="flex items-center gap-1"><Icon name="copy" size={14} />{prompt.copy_count}</span>}
+            {typeof copyCount === 'number' && <span className="flex items-center gap-1"><Icon name="copy" size={14} />{copyCount}</span>}
             <LikeButton
               promptId={prompt.prompt_id}
               initialLikeCount={prompt.like_count}

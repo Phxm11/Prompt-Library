@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PromptCard from '@/app/components/PromptCard'
+import { promptSearchFilter } from '@/lib/promptSearch'
 
 const PAGE_SIZE = 12
 
@@ -11,6 +12,7 @@ type Prompt = {
   title: string
   prompt_text: string
   cover_image_url: string | null
+  cover_position?: string | null
   view_count: number
   like_count: number
   copy_count?: number
@@ -82,7 +84,7 @@ export default function PromptInfiniteGrid({
       if (allowedIds) q = q.in('prompt_id', allowedIds)
     }
     if (mode === 'search' && query) {
-      q = q.textSearch('search_vector', query, { type: 'websearch', config: 'simple' })
+      q = q.or(promptSearchFilter(query))
     }
 
     const { data, error } = await q

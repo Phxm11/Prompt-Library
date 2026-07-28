@@ -44,7 +44,7 @@ export default async function LandingPage() {
   const steps = [
     { no: '01', icon: 'search' as const, title: 'ค้นหา', desc: 'กรองตามหมวดหมู่ ประเภทสื่อ หรือโมเดล AI ที่คุณใช้อยู่' },
     { no: '02', icon: 'copy' as const, title: 'คัดลอก', desc: 'กดปุ่มเดียวได้ prompt เต็ม ๆ พร้อมวางใช้งานทันที' },
-    { no: '03', icon: 'heart' as const, title: 'เก็บไว้ใช้', desc: 'บันทึกเป็นรายการโปรด และดูย้อนหลังได้จากประวัติการใช้งาน' },
+    { no: '03', icon: 'heart' as const, title: 'เก็บไว้ใช้', desc: 'บันทึกเป็นรายการโปรด แล้วกลับมาหยิบใช้ได้ทุกเมื่อ' },
   ]
 
   return (

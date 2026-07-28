@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Icon from '@/app/components/Icon'
 
 export type SelectOption = { value: string; label: string }
@@ -15,6 +16,9 @@ type SelectMenuProps = {
   className?: string
 }
 
+const GAP = 8
+const MAX_PANEL_HEIGHT = 288
+
 export default function SelectMenu({
   value,
   onChange,
@@ -24,9 +28,14 @@ export default function SelectMenu({
   className = '',
 }: SelectMenuProps) {
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
-  const rootRef = useRef<HTMLDivElement>(null)
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; flip: boolean } | null>(null)
+
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+
+  useEffect(() => setMounted(true), [])
 
   // รวมตัวเลือก "ทั้งหมด" (ค่าว่าง) เข้าไปเป็นรายการแรก ถ้ามี placeholder
   const items: SelectOption[] = placeholder
@@ -35,15 +44,60 @@ export default function SelectMenu({
 
   const selected = items.find((o) => o.value === value)
 
+  /*
+    วางเมนูด้วยพิกัดจริงบนจอแล้วส่งไปแขวนที่ document.body ผ่าน portal
+
+    เดิมใช้ absolute ซ้อนในตัว component ซึ่งพังสองแบบ:
+    1) element แม่ที่มี transform (เช่นอนิเมชันตอนโผล่) สร้าง stacking context ใหม่
+       ทำให้ z-index ของเมนูสู้พี่น้องที่อยู่ถัดไปไม่ได้ เมนูเลยมุดลงไปอยู่ใต้ช่องอื่น
+    2) กล่องที่ตั้ง overflow-hidden ไว้ (เช่นการ์ดตารางในหน้า admin) จะตัดเมนูหายไปเลย
+  */
+  const place = useCallback(() => {
+    const el = triggerRef.current
+    if (!el) return
+
+    const r = el.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - r.bottom
+    const needed = Math.min(items.length * 40 + 8, MAX_PANEL_HEIGHT)
+    // ถ้าข้างล่างไม่พอและข้างบนกว้างกว่า ให้พลิกไปกางขึ้น
+    const flip = spaceBelow < needed + GAP && r.top > spaceBelow
+
+    setRect({
+      top: flip ? r.top - GAP : r.bottom + GAP,
+      left: r.left,
+      width: r.width,
+      flip,
+    })
+  }, [items.length])
+
+  useLayoutEffect(() => {
+    if (!open) return
+    place()
+  }, [open, place])
+
   useEffect(() => {
     if (!open) return
 
-    function onClickOutside(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    function onDown(e: MouseEvent) {
+      const target = e.target as Node
+      if (triggerRef.current?.contains(target)) return
+      if (listRef.current?.contains(target)) return
+      setOpen(false)
     }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [open])
+    // ตำแหน่งต้องตามไปด้วยเวลาหน้าเลื่อนหรือย่อ-ขยาย เพราะเมนูใช้พิกัดคงที่บนจอ
+    function onReflow() {
+      place()
+    }
+
+    document.addEventListener('mousedown', onDown)
+    window.addEventListener('scroll', onReflow, true)
+    window.addEventListener('resize', onReflow)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      window.removeEventListener('scroll', onReflow, true)
+      window.removeEventListener('resize', onReflow)
+    }
+  }, [open, place])
 
   // เปิดมาให้ไฮไลต์อยู่ที่ตัวที่เลือกไว้ และเลื่อนให้เห็น
   useEffect(() => {
@@ -87,9 +141,64 @@ export default function SelectMenu({
     }
   }
 
+  const panel = open && rect && (
+    <ul
+      ref={listRef}
+      role="listbox"
+      aria-label={ariaLabel}
+      style={{
+        position: 'fixed',
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: MAX_PANEL_HEIGHT,
+        transform: rect.flip ? 'translateY(-100%)' : undefined,
+      }}
+      className="animate-menu-in z-[150] min-w-max overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)]"
+    >
+      {items.map((opt, i) => {
+        const isSelected = opt.value === value
+        return (
+          <li key={opt.value || '__all__'}>
+            <button
+              type="button"
+              role="option"
+              aria-selected={isSelected}
+              onMouseEnter={() => setActiveIndex(i)}
+              onClick={() => pick(opt.value)}
+              className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left font-mono text-sm transition-colors ${
+                isSelected
+                  ? 'bg-accent/10 text-accent'
+                  : i === activeIndex
+                  ? 'bg-accent/5 text-ink'
+                  : 'text-ink-soft'
+              }`}
+            >
+              <span className="truncate">{opt.label}</span>
+              {isSelected && (
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className="shrink-0"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              )}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+
   return (
-    <div ref={rootRef} className={`relative ${className}`}>
+    <div className={className}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         onKeyDown={onKeyDown}
@@ -108,51 +217,7 @@ export default function SelectMenu({
         </span>
       </button>
 
-      {open && (
-        <ul
-          ref={listRef}
-          role="listbox"
-          aria-label={ariaLabel}
-          className="animate-menu-in absolute left-0 top-full z-40 mt-2 max-h-72 w-full min-w-max overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)]"
-        >
-          {items.map((opt, i) => {
-            const isSelected = opt.value === value
-            return (
-              <li key={opt.value || '__all__'}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  onClick={() => pick(opt.value)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left font-mono text-sm transition-colors ${
-                    isSelected
-                      ? 'bg-accent/10 text-accent'
-                      : i === activeIndex
-                      ? 'bg-accent/5 text-ink'
-                      : 'text-ink-soft'
-                  }`}
-                >
-                  <span className="truncate">{opt.label}</span>
-                  {isSelected && (
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      className="shrink-0"
-                    >
-                      <path d="M20 6 9 17l-5-5" />
-                    </svg>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      {mounted && panel ? createPortal(panel, document.body) : null}
     </div>
   )
 }

@@ -90,6 +90,20 @@
 
   /* เมนู dropdown — ต้องไวและไม่เด้ง ไม่งั้นกดเลือกซ้ำ ๆ แล้วรำคาญ */
   --animate-menu-in: menu-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* กล่องยืนยัน — ผุดขึ้นมากลางจอ เด้งเบา ๆ ให้รู้สึกว่ามีน้ำหนัก */
+  --animate-dialog-in: dialog-in 0.24s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes menu-in {
@@ -168,6 +182,26 @@ h3 {
 }
 
 /*
+  ไล่ลูกทีละชิ้น สำหรับกล่องที่มีลูกหลายอันอย่างฟอร์ม
+  ทำที่ CSS แทนการไปใส่ delay ทีละ element ในทุกไฟล์
+  ตัดเพดานที่ลูกคนที่ 10 ไม่งั้นฟอร์มยาว ๆ ช่องท้าย ๆ จะรอนานเกินไป
+*/
+.stagger-children > * {
+  animation: var(--animate-spring-up);
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 175ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 230ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 285ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 340ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 395ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 450ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 505ms; }
+.stagger-children > *:nth-child(9) { animation-delay: 560ms; }
+.stagger-children > *:nth-child(n + 10) { animation-delay: 615ms; }
+
+/*
   หัวข้อหลักของแต่ละหน้า — แถบไล่สีนีออนหน้าข้อความ ใช้แทนป้าย // แบบคอมเมนต์โค้ดเดิม
   ใช้ ::before เพื่อไม่ต้องเพิ่ม element ในทุกหน้า
 */
@@ -227,7 +261,8 @@ h3 {
   ใช้ longhand ไม่ใช่ shorthand เพื่อไม่ให้ animation-delay ที่ไล่จังหวะไว้ถูกล้าง
 */
 @media (prefers-reduced-motion: reduce) {
-  .animate-spring-up {
+  .animate-spring-up,
+  .stagger-children > * {
     animation-name: fade-only;
     animation-duration: 0.4s;
     animation-timing-function: ease-out;

@@ -4,10 +4,13 @@ import { useState, ViewTransition } from 'react'
 
 type ImageGalleryProps = {
   coverImageUrl: string | null
-  examples: { example_id: string; file_url: string }[]
+  examples: { example_id: string; file_url: string; position?: string | null; zoom?: number | null }[]
   title: string
   /** ชื่อ view transition ให้ตรงกับรูปบนการ์ด รูปจะได้มอร์ฟต่อกันตอนเปลี่ยนหน้า */
   transitionName?: string
+  /** ตำแหน่งโฟกัสของรูปปก ใช้ค่าเดียวกับที่โชว์บนการ์ด */
+  coverPosition?: string | null
+  coverZoom?: number | null
 }
 
 export default function ImageGallery({
@@ -15,14 +18,26 @@ export default function ImageGallery({
   examples,
   title,
   transitionName,
+  coverPosition,
+  coverZoom,
 }: ImageGalleryProps) {
-  // รวมภาพหลักกับภาพตัวอย่างเข้าด้วยกัน (ตัดรูปซ้ำออก)
-  const allImages = [
-    ...(coverImageUrl ? [coverImageUrl] : []),
-    ...examples.map((e) => e.file_url),
+  /*
+    รูปแต่ละใบพกกรอบของตัวเองมาด้วย (position + zoom)
+    รูปปกใช้ค่าจากตาราง prompts ส่วนรูปตัวอย่างใช้ค่าจากแถวของตัวเองใน prompt_examples
+  */
+  const allImages: { url: string; position: string; zoom: number }[] = [
+    ...(coverImageUrl
+      ? [{ url: coverImageUrl, position: coverPosition ?? '50% 50%', zoom: coverZoom ?? 1 }]
+      : []),
+    ...examples.map((e) => ({
+      url: e.file_url,
+      position: e.position ?? '50% 50%',
+      zoom: e.zoom ?? 1,
+    })),
   ]
 
-  const [activeImage, setActiveImage] = useState(allImages[0] ?? null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const active = allImages[activeIndex] ?? allImages[0]
 
   if (allImages.length === 0) {
     return (
@@ -38,8 +53,12 @@ export default function ImageGallery({
       <div className="relative aspect-video bg-surface border border-line rounded-xl overflow-hidden mb-3">
         <ViewTransition name={transitionName}>
           <img
-            src={activeImage ?? allImages[0]}
+            src={active.url}
             alt={title}
+            style={{
+              objectPosition: active.position,
+              transform: `scale(${active.zoom})`,
+            }}
             className="w-full h-full object-cover"
           />
         </ViewTransition>
@@ -57,19 +76,20 @@ export default function ImageGallery({
       {/* แถบ thumbnail (แสดงเมื่อมีมากกว่า 1 รูป) */}
       {allImages.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {allImages.map((url, idx) => (
+          {allImages.map((img, idx) => (
             <button
               key={idx}
-              onClick={() => setActiveImage(url)}
+              onClick={() => setActiveIndex(idx)}
               className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                activeImage === url
-                  ? 'border-blue-600'
-                  : 'border-transparent hover:border-gray-300'
+                idx === activeIndex
+                  ? 'border-accent'
+                  : 'border-transparent hover:border-accent/40'
               }`}
             >
               <img
-                src={url}
+                src={img.url}
                 alt={`ตัวอย่าง ${idx + 1}`}
+                style={{ objectPosition: img.position, transform: `scale(${img.zoom})` }}
                 className="w-full h-full object-cover"
               />
             </button>

@@ -1,33 +1,54 @@
 import { createClient } from '@/lib/supabase/server'
 import AdminUserActions from '@/app/admin/users/AdminUserActions'
+import AdminUserFilters from '@/app/admin/users/AdminUserFilters'
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; status?: string; q?: string }>
+}) {
   const supabase = await createClient()
+  const { role, status, q } = await searchParams
 
-  const { data: users, error } = await supabase
+  let query = supabase
     .from('profiles')
-    .select('id, username, display_name, role, is_banned, banned_reason, created_at')
+    .select('id, username, display_name, role, is_banned, banned_reason, created_at', {
+      count: 'exact',
+    })
     .order('created_at', { ascending: false })
     .limit(100)
 
+  if (role) query = query.eq('role', role)
+  if (status) query = query.eq('is_banned', status === 'banned')
+
+  /*
+    ค้นทั้ง username และชื่อเล่นด้วยคำเดียว
+    ต้อง escape % _ \ ก่อน เพราะเป็นอักขระพิเศษของ LIKE
+    และ escape , ด้วย เพราะ .or() ใช้จุลภาคคั่นเงื่อนไข ถ้าไม่กันจะแตกเป็นสองเงื่อนไข
+  */
+  if (q) {
+    const keyword = q.replace(/[%_\\]/g, (ch) => `\\${ch}`).replace(/,/g, '')
+    query = query.or(`username.ilike.%${keyword}%,display_name.ilike.%${keyword}%`)
+  }
+
+  const { data: users, error, count } = await query
+
   return (
     <div>
-      <p className="text-xs tracking-[0.3em] text-fuchsia-400/80 font-mono mb-2 uppercase">
-        // users
-      </p>
-      <h1
-        className="text-2xl font-bold text-[#f2f2f7] mb-6"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-      >
+      <h1 className="animate-spring-up section-title text-3xl font-extrabold text-ink mb-6">
         จัดการผู้ใช้
       </h1>
 
-      {error && <p className="text-fuchsia-400">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
 
-      <div className="rounded-xl bg-[#12121c] border border-[#232336] overflow-hidden">
+      <div className="animate-spring-up [animation-delay:60ms] relative z-20">
+        <AdminUserFilters total={count ?? users?.length ?? 0} />
+      </div>
+
+      <div className="animate-spring-up [animation-delay:120ms] rounded-xl bg-surface border border-line overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#232336] text-left text-[#666680] font-mono text-xs">
+            <tr className="border-b border-line text-left text-faint font-mono text-xs">
               <th className="px-4 py-3">ผู้ใช้</th>
               <th className="px-4 py-3">สถานะ</th>
               <th className="px-4 py-3">สมัครเมื่อ</th>
@@ -36,15 +57,15 @@ export default async function AdminUsersPage() {
           </thead>
           <tbody>
             {users?.map((u) => (
-              <tr key={u.id} className="border-b border-[#232336] last:border-0">
+              <tr key={u.id} className="border-b border-line last:border-0">
                 <td className="px-4 py-3">
-                  <p className="text-[#f2f2f7]">{u.display_name || u.username}</p>
-                  <p className="text-[#666680] text-xs font-mono">@{u.username}</p>
+                  <p className="text-ink">{u.display_name || u.username}</p>
+                  <p className="text-faint text-xs font-mono">@{u.username}</p>
                 </td>
                 <td className="px-4 py-3">
                   {u.is_banned ? (
                     <span
-                      className="text-xs font-mono px-2 py-0.5 rounded-full bg-fuchsia-500/10 text-fuchsia-300"
+                      className="text-xs font-mono px-2 py-0.5 rounded-full bg-accent2/10 text-accent2"
                       title={u.banned_reason ?? ''}
                     >
                       ถูกแบน
@@ -55,11 +76,16 @@ export default async function AdminUsersPage() {
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-[#666680] font-mono text-xs">
+                <td className="px-4 py-3 text-faint font-mono text-xs">
                   {new Date(u.created_at).toLocaleDateString('th-TH')}
                 </td>
                 <td className="px-4 py-3">
-                  <AdminUserActions userId={u.id} currentRole={u.role} isBanned={u.is_banned} />
+                  <AdminUserActions
+                    userId={u.id}
+                    currentRole={u.role}
+                    isBanned={u.is_banned}
+                    displayName={u.display_name || u.username}
+                  />
                 </td>
               </tr>
             ))}
@@ -67,7 +93,7 @@ export default async function AdminUsersPage() {
         </table>
 
         {users?.length === 0 && (
-          <p className="text-center py-10 text-[#666680] font-mono text-sm">ยังไม่มีผู้ใช้</p>
+          <p className="text-center py-10 text-faint font-mono text-sm">ยังไม่มีผู้ใช้</p>
         )}
       </div>
     </div>

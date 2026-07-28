@@ -84,13 +84,6 @@ export default function LikeButton({
       )
       if (countError) throw countError
 
-      if (nextLiked) {
-        await supabase.from('usage_history').insert({
-          prompt_id: promptId,
-          user_id: userId,
-          action_type: 'like',
-        })
-      }
       router.refresh()
     } catch (error) {
       console.error('Like toggle failed:', error)
