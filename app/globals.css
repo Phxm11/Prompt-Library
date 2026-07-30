@@ -82,6 +82,20 @@
     both;
   --animate-float: float 6s ease-in-out infinite;
 
+  /*
+    แสงฟุ้งพื้นหลังหน้าแรก — ลอยเป็นวงกว้างช้า ๆ คนละจังหวะกัน
+
+    ทำไมต้องมีสามชุด: ถ้าใช้ keyframes เดียวกันหมดแล้วแค่หน่วงเวลาต่างกัน
+    ก้อนแสงจะวิ่งเป็นเส้นทางเดียวกันเป๊ะ ตาจับได้ว่าเป็นลูป
+    ให้แต่ละก้อนมีเส้นทางของตัวเองแทน ภาพรวมจะเหมือนแสงไหลไปมาไม่ซ้ำเดิม
+
+    รอบละ 13-19 วินาที — เคยลองช้ากว่านี้ (26-40 วินาที) แล้วช้าจนเหมือนไม่ขยับ
+    เพราะระยะทางหารด้วยเวลาแล้วเหลือไม่ถึง 3px ต่อวินาที ตาจับไม่ได้
+  */
+  --animate-drift-a: drift-a 13s ease-in-out infinite;
+  --animate-drift-b: drift-b 16s ease-in-out infinite;
+  --animate-drift-c: drift-c 19s ease-in-out infinite;
+
   /* ใช้กับกรอบ HUD มุมภาพในหน้ารายละเอียด */
   --animate-fade-soft: fade-only 0.7s ease-out both;
 
@@ -90,6 +104,20 @@
 
   /* เมนู dropdown — ต้องไวและไม่เด้ง ไม่งั้นกดเลือกซ้ำ ๆ แล้วรำคาญ */
   --animate-menu-in: menu-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* กล่องยืนยัน — ผุดขึ้นมากลางจอ เด้งเบา ๆ ให้รู้สึกว่ามีน้ำหนัก */
+  --animate-dialog-in: dialog-in 0.24s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes menu-in {
@@ -132,6 +160,68 @@
   }
 }
 
+/*
+  เส้นทางลอยของแสงฟุ้ง
+
+  ขยับด้วย translate3d เป็น % ของขนาดก้อนเอง กับ scale เท่านั้น
+  ทั้งสองอย่างทำงานบน compositor ไม่ต้อง layout/paint ใหม่
+  ซึ่งสำคัญมากกับ element ที่มี blur 130px — ถ้าไปขยับ top/left จะกินซีพียูจนหน้าหนืดทันที
+
+  ความทึบขยับตามด้วย โดยคูณจาก --glow-strength เพื่อให้ธีมสว่างกับธีมมืดยังคุมความแรงได้จากที่เดียว
+*/
+@keyframes drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: var(--glow-strength);
+  }
+  33% {
+    transform: translate3d(38%, 26%, 0) scale(1.35);
+    opacity: calc(var(--glow-strength) * 1.3);
+  }
+  66% {
+    transform: translate3d(-28%, 40%, 0) scale(0.8);
+    opacity: calc(var(--glow-strength) * 0.65);
+  }
+}
+
+@keyframes drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+    opacity: calc(var(--glow-strength) * 0.85);
+  }
+  40% {
+    transform: translate3d(-42%, 30%, 0) scale(0.78);
+    opacity: calc(var(--glow-strength) * 1.35);
+  }
+  70% {
+    transform: translate3d(-12%, -26%, 0) scale(1.3);
+    opacity: calc(var(--glow-strength) * 0.7);
+  }
+}
+
+@keyframes drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.9);
+    opacity: calc(var(--glow-strength) * 0.7);
+  }
+  50% {
+    transform: translate3d(46%, -34%, 0) scale(1.4);
+    opacity: calc(var(--glow-strength) * 1.3);
+  }
+}
+
+/*
+  ตัวคลาส animate-drift-* เอง Tailwind สร้างให้จาก --animate-drift-* ใน @theme อยู่แล้ว
+
+  เคยใส่ will-change: transform, opacity ไว้ตรงนี้ แต่เอาออก
+  เพราะ Chromium บางเวอร์ชันจับคู่ will-change กับ blur รัศมีใหญ่ ๆ แล้ว rasterize เก็บไว้ชั้นเดียว
+  จนก้อนแสงค้างนิ่งไปเลย ซึ่งแย่กว่าอาการกระตุกช่วงเฟรมแรกที่ตั้งใจจะแก้ตอนแรกมาก
+  translate3d ใน keyframes ดัน layer ให้อยู่แล้ว จึงไม่ต้องบอกซ้ำ
+*/
+
 /* แสงฟุ้งพื้นหลังลอยช้า ๆ ให้หน้าไม่นิ่งสนิท */
 @keyframes float {
   0%,
@@ -166,6 +256,26 @@ h3 {
 .glow-blob {
   opacity: var(--glow-strength);
 }
+
+/*
+  ไล่ลูกทีละชิ้น สำหรับกล่องที่มีลูกหลายอันอย่างฟอร์ม
+  ทำที่ CSS แทนการไปใส่ delay ทีละ element ในทุกไฟล์
+  ตัดเพดานที่ลูกคนที่ 10 ไม่งั้นฟอร์มยาว ๆ ช่องท้าย ๆ จะรอนานเกินไป
+*/
+.stagger-children > * {
+  animation: var(--animate-spring-up);
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 175ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 230ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 285ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 340ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 395ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 450ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 505ms; }
+.stagger-children > *:nth-child(9) { animation-delay: 560ms; }
+.stagger-children > *:nth-child(n + 10) { animation-delay: 615ms; }
 
 /*
   หัวข้อหลักของแต่ละหน้า — แถบไล่สีนีออนหน้าข้อความ ใช้แทนป้าย // แบบคอมเมนต์โค้ดเดิม
@@ -227,14 +337,18 @@ h3 {
   ใช้ longhand ไม่ใช่ shorthand เพื่อไม่ให้ animation-delay ที่ไล่จังหวะไว้ถูกล้าง
 */
 @media (prefers-reduced-motion: reduce) {
-  .animate-spring-up {
+  .animate-spring-up,
+  .stagger-children > * {
     animation-name: fade-only;
     animation-duration: 0.4s;
     animation-timing-function: ease-out;
     animation-fill-mode: both;
   }
 
-  .animate-float {
+  .animate-float,
+  .animate-drift-a,
+  .animate-drift-b,
+  .animate-drift-c {
     animation: none;
   }
 

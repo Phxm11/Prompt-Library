@@ -7,6 +7,7 @@ type Prompt = {
   title: string
   prompt_text: string
   cover_image_url: string | null
+  cover_position?: string | null
   view_count: number
   like_count: number
   copy_count?: number
@@ -37,7 +38,7 @@ export default async function FavoritesPage() {
 
   const { data, error } = await supabase
     .from('favorites')
-    .select('created_at, prompts(prompt_id, title, prompt_text, cover_image_url, view_count, like_count, copy_count, categories(name), media_types(name))')
+    .select('created_at, prompts(prompt_id, title, prompt_text, cover_image_url, cover_position, view_count, like_count, copy_count, categories(name), media_types(name))')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 

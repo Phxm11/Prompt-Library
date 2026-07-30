@@ -67,8 +67,11 @@ export default async function BrowsePromptsPage({
           backgroundSize: '48px 48px',
         }}
       />
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-accent/20 rounded-full blur-[120px] pointer-events-none glow-blob" />
-      <div className="absolute -top-20 right-0 w-96 h-96 bg-accent2/20 rounded-full blur-[120px] pointer-events-none glow-blob" />
+      {/* ใช้เส้นทางลอยชุดเดียวกับหน้าแรก (drift-* ใน globals.css) แต่คนละเส้นกัน จะได้ไม่ซ้ำภาพเดิม */}
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-accent/20 rounded-full blur-[120px] pointer-events-none animate-drift-b glow-blob" />
+      <div className="absolute -top-20 right-0 w-96 h-96 bg-accent2/20 rounded-full blur-[120px] pointer-events-none animate-drift-c glow-blob" />
+      {/* เติมก้อนที่สามครึ่งล่าง เดิมมีแค่สองก้อนบนสุด เลื่อนลงมาแล้วพื้นหลังหายไปเลย */}
+      <div className="absolute top-[65%] left-1/3 w-[28rem] h-[28rem] bg-accent/10 rounded-full blur-[140px] pointer-events-none animate-drift-a [animation-duration:17s] [animation-delay:-6s] glow-blob" />
 
       <div className="relative max-w-6xl mx-auto px-6 py-12">
         <div className="animate-spring-up mb-10">

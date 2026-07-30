@@ -44,7 +44,7 @@ export default async function LandingPage() {
   const steps = [
     { no: '01', icon: 'search' as const, title: 'ค้นหา', desc: 'กรองตามหมวดหมู่ ประเภทสื่อ หรือโมเดล AI ที่คุณใช้อยู่' },
     { no: '02', icon: 'copy' as const, title: 'คัดลอก', desc: 'กดปุ่มเดียวได้ prompt เต็ม ๆ พร้อมวางใช้งานทันที' },
-    { no: '03', icon: 'heart' as const, title: 'เก็บไว้ใช้', desc: 'บันทึกเป็นรายการโปรด และดูย้อนหลังได้จากประวัติการใช้งาน' },
+    { no: '03', icon: 'heart' as const, title: 'เก็บไว้ใช้', desc: 'บันทึกเป็นรายการโปรด แล้วกลับมาหยิบใช้ได้ทุกเมื่อ' },
   ]
 
   return (
@@ -59,9 +59,15 @@ export default async function LandingPage() {
           backgroundSize: '48px 48px',
         }}
       />
-      <div className="absolute -top-48 -left-40 w-[32rem] h-[32rem] bg-accent/20 rounded-full blur-[130px] pointer-events-none animate-float glow-blob" />
-      <div className="absolute -top-32 -right-40 w-[32rem] h-[32rem] bg-accent2/20 rounded-full blur-[130px] pointer-events-none animate-float [animation-duration:7s] [animation-delay:1.5s] glow-blob" />
-      <div className="absolute top-[60%] left-1/3 w-96 h-96 bg-accent/10 rounded-full blur-[140px] pointer-events-none animate-float [animation-duration:8s] [animation-delay:3s] glow-blob" />
+      {/*
+        ก้อนแสงสี่ก้อน แต่ละก้อนใช้เส้นทางลอยคนละเส้น (drift-a/b/c ใน globals.css)
+        คู่ที่ใช้เส้นทางซ้ำกันหน่วงเวลาต่างกันมาก ๆ จะได้ไม่ขยับพร้อมกันจนดูเป็นลูป
+        ทั้งหมดเป็น transform + opacity ล้วน ก้อนเบลอ 130px จึงลอยได้โดยไม่กินแรงเครื่อง
+      */}
+      <div className="absolute -top-48 -left-40 w-[32rem] h-[32rem] bg-accent/20 rounded-full blur-[130px] pointer-events-none animate-drift-a glow-blob" />
+      <div className="absolute -top-32 -right-40 w-[32rem] h-[32rem] bg-accent2/20 rounded-full blur-[130px] pointer-events-none animate-drift-b glow-blob" />
+      <div className="absolute top-[55%] left-1/4 w-[28rem] h-[28rem] bg-accent/10 rounded-full blur-[140px] pointer-events-none animate-drift-c glow-blob" />
+      <div className="absolute top-[70%] -right-24 w-[26rem] h-[26rem] bg-accent2/10 rounded-full blur-[150px] pointer-events-none animate-drift-a [animation-duration:15s] [animation-delay:-7s] glow-blob" />
 
       <div className="relative max-w-6xl mx-auto px-6">
         {/* ── HERO ─────────────────────────────────────────────── */}

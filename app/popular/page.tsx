@@ -38,7 +38,7 @@ export default async function PopularPromptsPage() {
         ยอดนิยม
       </h1>
       <p className="animate-spring-up [animation-delay:60ms] text-muted text-sm mb-8">
-        เรียงตามจำนวนครั้งที่ถูกคัดลอกไปใช้งานจริง (จาก usage_history)
+        เรียงตามจำนวนคนที่คัดลอกไปใช้งานจริง (นับคนละครั้งเดียว)
       </p>
 
       {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
@@ -105,7 +105,7 @@ export default async function PopularPromptsPage() {
             {/* จำนวนคัดลอก */}
             <div className="shrink-0 text-right">
               <p className="text-lg font-bold font-mono text-accent">{p.copy_uses}</p>
-              <p className="text-[10px] text-faint font-mono uppercase">copies</p>
+              <p className="text-[10px] text-faint font-mono uppercase">users</p>
             </div>
           </a>
         ))}

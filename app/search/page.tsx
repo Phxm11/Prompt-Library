@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
 import SearchBar from '@/app/components/SearchBar'
+import { promptSearchFilter } from '@/lib/promptSearch'
 
 const PAGE_SIZE = 12
 
@@ -22,7 +23,7 @@ export default async function SearchPage({
       .from('prompts')
       .select('*, categories(name), media_types(name)', { count: 'exact' })
       .eq('is_public', true)
-      .textSearch('search_vector', query, { type: 'websearch', config: 'simple' })
+      .or(promptSearchFilter(query))
       .order('created_at', { ascending: false })
       .order('prompt_id', { ascending: true })
       .range(0, PAGE_SIZE - 1)
@@ -41,7 +42,12 @@ export default async function SearchPage({
         ค้นหา Prompt
       </h1>
 
-      <div className="max-w-xl mb-8">
+      {/*
+        relative z-30 จำเป็น ไม่ใช่ของประดับ
+        รายการแนะนำเป็น absolute ที่ลอยทับผลการค้นหาข้างล่าง ถ้ากล่องนี้ไม่มี z ของตัวเอง
+        การ์ดผลลัพธ์ (ซึ่งมี transform จากอนิเมชันและ hover:z-10) จะขึ้นมาทับ รายการแนะนำเลยเหมือนมุดหายไป
+      */}
+      <div className="relative z-30 max-w-xl mb-8">
         <SearchBar initialQuery={query} />
       </div>
 
