@@ -5,8 +5,8 @@ import Link from 'next/link'
 import LikeButton from '@/app/components/LikeButton'
 import Icon from '@/app/components/Icon'
 import { showToast } from '@/app/components/Toast'
-import { createClient } from '@/lib/supabase/client'
 import { recordCopy } from '@/lib/recordCopy'
+import { getGuestId } from '@/lib/guestId'
 
 type PromptCardProps = {
   prompt: {
@@ -35,7 +35,6 @@ export default function PromptCard({ prompt, index = 0 }: PromptCardProps) {
   const [copied, setCopied] = useState(false)
   // เก็บยอดไว้ใน state เพื่อให้ตัวเลขบนการ์ดขยับทันทีที่กดคัดลอก โดยไม่ต้องรีโหลดหน้า
   const [copyCount, setCopyCount] = useState(prompt.copy_count)
-  const supabase = createClient()
 
   async function handleQuickCopy(e: React.MouseEvent) {
     e.preventDefault() // กันไม่ให้ลิงก์ทำงานตอนกดปุ่ม copy
@@ -49,7 +48,7 @@ export default function PromptCard({ prompt, index = 0 }: PromptCardProps) {
       setTimeout(() => setCopied(false), 1500)
 
       // นับยอดด้วยกติกาเดียวกับปุ่มในหน้ารายละเอียด คือคนละ 1 ครั้ง
-      const { counted } = await recordCopy(supabase, prompt.prompt_id)
+      const { counted } = await recordCopy(prompt.prompt_id, getGuestId())
       if (counted) setCopyCount((prev) => (typeof prev === 'number' ? prev + 1 : prev))
     } catch (err) {
       console.error('Copy failed:', err)

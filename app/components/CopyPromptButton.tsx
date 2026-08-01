@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/components/Toast'
 import { recordCopy } from '@/lib/recordCopy'
+import { getGuestId } from '@/lib/guestId'
 
 type CopyPromptButtonProps = {
   promptId: string
@@ -20,7 +20,6 @@ export default function CopyPromptButton({
   const [copied, setCopied] = useState(false)
   const [copyCount, setCopyCount] = useState(initialCopyCount)
   const router = useRouter()
-  const supabase = createClient()
 
   /*
     ผู้เยี่ยมชมที่ไม่ได้ล็อกอินคัดลอกได้เลย ไม่ต้องเด้งไปหน้า login อีกแล้ว
@@ -33,7 +32,7 @@ export default function CopyPromptButton({
       showToast('คัดลอก Prompt แล้ว')
       setTimeout(() => setCopied(false), 2000)
 
-      const { counted } = await recordCopy(supabase, promptId)
+      const { counted } = await recordCopy(promptId, getGuestId())
 
       if (counted) {
         setCopyCount((prev) => prev + 1)
