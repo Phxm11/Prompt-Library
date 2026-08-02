@@ -2,6 +2,15 @@ import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
 /*
+  บังคับให้เป็น dynamic (สร้างตอนมีคนเข้าจริง ไม่ใช่ตอน build)
+  เหตุผล: ถ้าปล่อยให้ Next.js prerender เป็น static ตอน build มันจะต้องต่อฐานข้อมูลจริงตอนนั้นเลย
+  ถ้า DATABASE_URL ผิดหรือฐานข้อมูลเข้าไม่ได้ชั่วคราว จะทำให้ "ทั้งเว็บ deploy ไม่ได้"
+  ทั้งที่หน้าอื่นทั้งหมดไม่ได้ใช้ Prisma เลย (ใช้ Supabase client คนละชุด env กัน)
+  เปลี่ยนเป็น dynamic แล้วต่อให้ค่านี้ผิดพลาด กระทบแค่ /sitemap.xml หน้าเดียวตอนมีคนเข้าจริง ไม่ทำให้ deploy ล้มทั้งเว็บ
+*/
+export const dynamic = 'force-dynamic'
+
+/*
   ยังไม่มี domain จริง เลยอ่านจาก NEXT_PUBLIC_SITE_URL แทนการ hardcode
   พอได้ domain แล้วแค่ตั้งค่า env ตัวนี้ใน production ไฟล์นี้ไม่ต้องแก้อะไรเพิ่ม
 */
