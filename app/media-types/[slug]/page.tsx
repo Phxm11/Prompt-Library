@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptCard from '@/app/components/PromptCard'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Icon from '@/app/components/Icon'
 
@@ -11,6 +12,30 @@ const mediaIcons: Record<string, 'image' | 'video' | 'audio' | 'document' | 'tex
   audio: 'audio',
   document: 'document',
   text: 'text',
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  const { data: mediaType } = await supabase
+    .from('media_types')
+    .select('name')
+    .eq('slug', slug)
+    .single()
+
+  if (!mediaType) return { title: 'ไม่พบประเภทสื่อนี้' }
+
+  const title = `Prompt สำหรับ${mediaType.name}`
+  return {
+    title,
+    description: `รวม Prompt AI ประเภท${mediaType.name} ทั้งหมด คัดลอกไปใช้งานได้ทันที`,
+    alternates: { canonical: `/media-types/${slug}` },
+  }
 }
 
 export default async function MediaTypeDetailPage({

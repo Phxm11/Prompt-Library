@@ -1,7 +1,32 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptCard from '@/app/components/PromptCard'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import Link from 'next/link'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+
+  const { data: aiModel } = await supabase
+    .from('ai_models')
+    .select('name, provider')
+    .eq('ai_model_id', id)
+    .single()
+
+  if (!aiModel) return { title: 'ไม่พบ AI Model นี้' }
+
+  const title = `Prompt สำหรับ ${aiModel.name}`
+  return {
+    title,
+    description: `รวม Prompt AI ที่ใช้กับ ${aiModel.name}${aiModel.provider ? ` โดย ${aiModel.provider}` : ''} คัดลอกไปใช้งานได้ทันที`,
+    alternates: { canonical: `/ai-models/${id}` },
+  }
+}
 
 export default async function AiModelDetailPage({
   params,

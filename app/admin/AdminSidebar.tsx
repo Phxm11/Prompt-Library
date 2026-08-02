@@ -8,6 +8,7 @@ const items = [
   { label: 'จัดการ Prompt', href: '/admin/prompts' },
   { label: 'จัดการผู้ใช้', href: '/admin/users' },
   { label: 'จัดการรีวิว', href: '/admin/reviews' },
+  { label: 'หมวดหมู่ & ข้อมูลอ้างอิง', href: '/admin/catalog' },
 ]
 
 export default function AdminSidebar() {

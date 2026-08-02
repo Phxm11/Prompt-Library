@@ -20,9 +20,35 @@ const jetbrains = JetBrains_Mono({
   variable: '--font-jetbrains',
 })
 
+/*
+  siteUrl ตัวเดียวกับที่ app/robots.ts และ app/sitemap.ts ใช้
+  ยังไม่มี domain จริงตอนนี้ก็ปล่อย fallback เป็น localhost ไปก่อน พอตั้ง NEXT_PUBLIC_SITE_URL
+  ใน production เมื่อไหร่ ทุกอย่างที่อ้างอิง metadataBase (เช่น og:image แบบ relative path) จะได้ URL เต็มถูกต้องเอง
+*/
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+const siteName = 'Prompt Library'
+const siteDescription = 'รวม Prompt AI สำหรับสร้างรูปภาพ วิดีโอ งานนำเสนอ และอื่นๆ'
+
 export const metadata: Metadata = {
-  title: 'Prompt Library',
-  description: 'รวม Prompt AI สำหรับสร้างรูปภาพ วิดีโอ งานนำเสนอ และอื่นๆ',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: siteName,
+    // หน้าที่ตั้ง title เฉพาะของตัวเอง (เช่น หน้า prompt แต่ละอัน) จะได้ต่อท้ายเป็น "ชื่อ prompt | Prompt Library" อัตโนมัติ
+    template: `%s | ${siteName}`,
+  },
+  description: siteDescription,
+  openGraph: {
+    type: 'website',
+    siteName,
+    title: siteName,
+    description: siteDescription,
+    locale: 'th_TH',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteName,
+    description: siteDescription,
+  },
 }
 
 /*

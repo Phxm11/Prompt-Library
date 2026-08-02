@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import ImageGallery from '@/app/components/ImageGallery'
 import CopyPromptButton from '@/app/components/CopyPromptButton'
@@ -9,6 +10,52 @@ import LikeButton from '@/app/components/LikeButton'
 import ViewTracker from '@/app/components/ViewTracker'
 import AuthorBadge from '@/app/components/AuthorBadge'
 import PromptOwnerActions from '@/app/components/PromptOwnerActions'
+
+/*
+  ก่อนหน้านี้ทุกหน้า prompt ใช้ title/description เดียวกันหมด (ค่า default จาก app/layout.tsx)
+  ทำให้ Google เห็นเป็นเนื้อหาซ้ำกันหลายพันหน้า และแชร์ลิงก์ prompt ไป Line/Facebook ก็ไม่เห็นตัวอย่างภาพ/คำอธิบายจริง
+  generateMetadata นี้ดึงแค่คอลัมน์ที่จำเป็น (ไม่ใช่ query เดียวกับ body หน้า) เพราะรันคนละรอบกัน
+*/
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+
+  const { data: prompt } = await supabase
+    .from('prompts')
+    .select('title, description, cover_image_url')
+    .eq('prompt_id', id)
+    .eq('is_public', true)
+    .single()
+
+  if (!prompt) {
+    return { title: 'ไม่พบ Prompt นี้' }
+  }
+
+  const description = prompt.description?.trim() || 'ดู Prompt นี้และคัดลอกไปใช้งานได้ทันทีที่ Prompt Library'
+
+  return {
+    title: prompt.title,
+    description,
+    alternates: { canonical: `/prompts/${id}` },
+    openGraph: {
+      title: prompt.title,
+      description,
+      type: 'article',
+      url: `/prompts/${id}`,
+      images: prompt.cover_image_url ? [{ url: prompt.cover_image_url }] : undefined,
+    },
+    twitter: {
+      card: prompt.cover_image_url ? 'summary_large_image' : 'summary',
+      title: prompt.title,
+      description,
+      images: prompt.cover_image_url ? [prompt.cover_image_url] : undefined,
+    },
+  }
+}
 
 export default async function PromptDetailPage({
   params,
