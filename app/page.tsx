@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import SearchBar from '@/app/components/SearchBar'
 import PromptCard from '@/app/components/PromptCard'
@@ -70,8 +71,22 @@ export default async function LandingPage() {
       <div className="absolute top-[70%] -right-24 w-[26rem] h-[26rem] bg-accent2/10 rounded-full blur-[150px] pointer-events-none animate-drift-a [animation-duration:15s] [animation-delay:-7s] glow-blob" />
 
       <div className="relative max-w-6xl mx-auto px-6">
+        {/* ── BANNER ───────────────────────────────────────────── */}
+        <section className="pt-10">
+          <div className="animate-spring-up relative overflow-hidden rounded-2xl border border-accent/30 shadow-[0_0_40px_rgba(103,232,249,0.15)]">
+            <Image
+              src="/images/hero-banner.jpg"
+              alt="Prompt Library — คลัง Prompt AI ภาษาไทย สำหรับสร้างรูปภาพ วิดีโอ และงานนำเสนอ"
+              width={1730}
+              height={742}
+              priority
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        </section>
+
         {/* ── HERO ─────────────────────────────────────────────── */}
-        <section className="pt-20 pb-16 text-center">
+        <section className="pt-12 pb-16 text-center">
           <span className="animate-spring-up inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono tracking-[0.2em] uppercase text-accent bg-accent/10 border border-accent/40 shadow-[0_0_20px_rgba(0,229,255,0.15)]">
             <Icon name="sparkles" size={13} />
             Prompt Library
