@@ -22,11 +22,6 @@ export default async function AdminUsersPage({
   if (role) query = query.eq('role', role)
   if (status) query = query.eq('is_banned', status === 'banned')
 
-  /*
-    ค้นทั้ง username และชื่อเล่นด้วยคำเดียว
-    ต้อง escape % _ \ ก่อน เพราะเป็นอักขระพิเศษของ LIKE
-    และ escape , ด้วย เพราะ .or() ใช้จุลภาคคั่นเงื่อนไข ถ้าไม่กันจะแตกเป็นสองเงื่อนไข
-  */
   if (q) {
     const keyword = q.replace(/[%_\\]/g, (ch) => `\\${ch}`).replace(/,/g, '')
     query = query.or(`username.ilike.%${keyword}%,display_name.ilike.%${keyword}%`)
@@ -47,7 +42,8 @@ export default async function AdminUsersPage({
       </div>
 
       <div className="animate-spring-up [animation-delay:120ms] rounded-xl bg-surface border border-line overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-faint font-mono text-xs">
               <th className="px-4 py-3">ผู้ใช้</th>
@@ -64,10 +60,6 @@ export default async function AdminUsersPage({
                   <p className="text-faint text-xs font-mono">@{u.username}</p>
                 </td>
                 <td className="px-4 py-3">
-                  {/*
-                    is_banned ยังเป็น true หลังหมดกำหนด เพราะไม่มีใครไปไล่ล้างค่าให้
-                    ตัวตัดสินจริงคือ banned_until เทียบกับตอนนี้ ซึ่งตรงกับที่ is_user_banned() ในฐานข้อมูลใช้
-                  */}
                   {u.is_banned && (!u.banned_until || new Date(u.banned_until) > new Date()) ? (
                     <div className="space-y-1">
                       <span
@@ -116,6 +108,7 @@ export default async function AdminUsersPage({
             ))}
           </tbody>
         </table>
+        </div>
 
         {users?.length === 0 && (
           <p className="text-center py-10 text-faint font-mono text-sm">ยังไม่มีผู้ใช้</p>

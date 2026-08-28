@@ -36,15 +36,15 @@ export default async function LandingPage() {
   ])
 
   const stats = [
-    { label: 'prompts', value: promptCount ?? 0, icon: 'sparkles' as const, color: 'text-accent' },
-    { label: 'categories', value: categoryCount ?? 0, icon: 'grid' as const, color: 'text-accent2' },
-    { label: 'media_types', value: mediaTypeCount ?? 0, icon: 'eye' as const, color: 'text-accent' },
-    { label: 'ai_models', value: aiModelCount ?? 0, icon: 'cpu' as const, color: 'text-accent2' },
+    { label: 'prompt', value: promptCount ?? 0, icon: 'sparkles' as const, color: 'accent' as const },
+    { label: 'หมวดหมู่', value: categoryCount ?? 0, icon: 'grid' as const, color: 'accent2' as const },
+    { label: 'ประเภทสื่อ', value: mediaTypeCount ?? 0, icon: 'image' as const, color: 'accent' as const },
+    { label: 'โมเดล AI', value: aiModelCount ?? 0, icon: 'cpu' as const, color: 'accent2' as const },
   ]
 
   const steps = [
     { no: '01', icon: 'search' as const, title: 'ค้นหา', desc: 'กรองตามหมวดหมู่ ประเภทสื่อ หรือโมเดล AI ที่คุณใช้อยู่' },
-    { no: '02', icon: 'copy' as const, title: 'คัดลอก', desc: 'กดปุ่มเดียวได้ prompt เต็ม ๆ พร้อมวางใช้งานทันที' },
+    { no: '02', icon: 'copy' as const, title: 'คัดลอก', desc: 'กดปุ่มเดียวได้ prompt เต็ม ๆ พร้อมวางใช้งานทันที ไม่ต้องล็อกอิน' },
     { no: '03', icon: 'heart' as const, title: 'เก็บไว้ใช้', desc: 'บันทึกเป็นรายการโปรด แล้วกลับมาหยิบใช้ได้ทุกเมื่อ' },
   ]
 
@@ -85,32 +85,18 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* ── HERO ─────────────────────────────────────────────── */}
-        <section className="pt-12 pb-16 text-center">
-          <span className="animate-spring-up inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono tracking-[0.2em] uppercase text-accent bg-accent/10 border border-accent/40 shadow-[0_0_20px_rgba(0,229,255,0.15)]">
-            <Icon name="sparkles" size={13} />
-            Prompt Library
-          </span>
-
-          <h1 className="animate-spring-up [animation-delay:150ms] mt-6 text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight leading-[1.05] bg-gradient-to-r from-accent via-accent-soft to-accent2 bg-clip-text text-transparent">
-            Prompt Library
-          </h1>
-
-          <p className="animate-spring-up [animation-delay:300ms] mt-5 text-base sm:text-lg text-ink-soft max-w-2xl mx-auto leading-relaxed">
-            คลัง Prompt AI ภาษาไทย สำหรับสร้าง{' '}
-            <span className="text-accent">รูปภาพ</span>{' '}
-            <span className="text-accent2">วิดีโอ</span> และ{' '}
-            <span className="text-accent">งานนำเสนอ</span>
-          </p>
-          <p className="animate-spring-up [animation-delay:450ms] mt-2 text-sm text-muted">
-            คัดลอกไปใช้ได้ทันที ไม่ต้องเขียนเองตั้งแต่ศูนย์
-          </p>
-
-          <div className="animate-spring-up [animation-delay:600ms] mt-8 max-w-xl mx-auto">
+        {/* ── ต่อจาก banner: ช่องค้นหา + ปุ่ม + ตัวเลขสรุป ────────── */}
+        {/*
+          banner มีหัวข้อ คำโปรย และ badge "PROMPT LIBRARY" ของตัวเองอยู่แล้ว (เป็นภาพ)
+          ส่วนนี้จึงไม่พูดซ้ำสิ่งที่ banner บอกไปแล้ว แค่ทำหน้าที่ต่อ: ให้กดค้นหา/เริ่มใช้ได้ทันที
+          การ์ดใช้พื้นผิวโปร่งแสง+เบลอเบา ๆ ไม่ใช่กระจกเข้มแบบ navbar เพราะอยู่ติดกับ banner ที่โทนสว่างนวล
+        */}
+        <section className="pt-8 pb-20 text-center">
+          <div className="animate-spring-up [animation-delay:120ms] max-w-xl mx-auto">
             <SearchBar />
           </div>
 
-          <div className="animate-spring-up [animation-delay:750ms] mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div className="animate-spring-up [animation-delay:220ms] mt-5 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/home"
               className="group px-6 py-3 rounded-lg font-mono text-sm bg-accent/15 text-accent-soft border border-accent/60 hover:bg-accent/25 hover:shadow-[0_0_24px_rgba(0,229,255,0.35)] transition-all flex items-center gap-2"
@@ -129,23 +115,43 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          {/* ตัวเลขสรุป */}
-          <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {stats.map((stat, i) => (
-              <div
-                key={stat.label}
-                style={{ animationDelay: `${900 + i * 100}ms` }}
-                className="animate-spring-up rounded-xl border border-line bg-surface/70 backdrop-blur px-4 py-5 hover:border-accent/40 transition-colors"
-              >
-                <Icon name={stat.icon} size={18} className={`${stat.color} mx-auto mb-2`} />
-                <p className={`text-3xl font-bold font-mono ${stat.color}`}>
-                  {stat.value.toLocaleString('th-TH')}
-                </p>
-                <p className="text-[10px] tracking-[0.2em] text-faint font-mono uppercase mt-1">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
+          {/* ตัวเลขสรุป — การ์ดแยกทีละอัน มีไอคอนกำกับ + ตัวเลขไล่สีเรืองแสงแบบเดียวกับหัวข้อ section ทั้งเว็บ */}
+          <div className="animate-spring-up [animation-delay:320ms] mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
+            {stats.map((stat) => {
+              const isAccent = stat.color === 'accent'
+              return (
+                <div
+                  key={stat.label}
+                  className="group relative overflow-hidden rounded-xl border border-line bg-surface/80 px-4 py-4 text-left hover:border-accent/40 transition-colors"
+                >
+                  {/* เรืองแสงมุมการ์ด จาง ๆ ตลอดเวลา แล้วเข้มขึ้นตอน hover ให้รู้สึกอินเตอร์แอกทีฟ */}
+                  <div
+                    className={`pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-30 group-hover:opacity-60 transition-opacity ${
+                      isAccent ? 'bg-accent' : 'bg-accent2'
+                    }`}
+                  />
+                  <span
+                    className={`relative inline-flex w-9 h-9 rounded-lg items-center justify-center mb-2.5 border ${
+                      isAccent
+                        ? 'bg-accent/10 border-accent/40 text-accent'
+                        : 'bg-accent2/10 border-accent2/40 text-accent2'
+                    }`}
+                  >
+                    <Icon name={stat.icon} size={16} />
+                  </span>
+                  <p
+                    className={`relative font-mono text-2xl font-extrabold bg-clip-text text-transparent ${
+                      isAccent
+                        ? 'bg-gradient-to-r from-accent to-accent-soft drop-shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_40%,transparent)]'
+                        : 'bg-gradient-to-r from-accent2 to-accent-soft drop-shadow-[0_0_10px_color-mix(in_srgb,var(--accent2)_40%,transparent)]'
+                    }`}
+                  >
+                    {stat.value.toLocaleString('th-TH')}
+                  </p>
+                  <p className="relative text-[11px] text-muted mt-0.5">{stat.label}</p>
+                </div>
+              )
+            })}
           </div>
         </section>
 
@@ -205,7 +211,12 @@ export default async function LandingPage() {
             ใช้งานได้ใน 3 ขั้นตอน
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* เส้นเชื่อมแนวนอนระหว่างการ์ด สื่อว่านี่คือลำดับที่ต้องทำต่อกัน ไม่ใช่แค่ลิสต์ 3 หัวข้อ */}
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div
+              className="hidden md:block absolute top-[2.75rem] left-[16.5%] right-[16.5%] h-px bg-gradient-to-r from-accent/40 via-line to-accent2/40"
+              aria-hidden="true"
+            />
             {steps.map((step) => (
               <div
                 key={step.no}
@@ -214,7 +225,7 @@ export default async function LandingPage() {
                 <span className="absolute top-4 right-5 text-3xl font-bold font-mono text-line">
                   {step.no}
                 </span>
-                <span className="inline-flex w-11 h-11 rounded-lg items-center justify-center bg-accent/10 border border-accent/40 text-accent mb-4">
+                <span className="relative inline-flex w-11 h-11 rounded-lg items-center justify-center bg-accent/10 border border-accent/40 text-accent mb-4">
                   <Icon name={step.icon} size={20} />
                 </span>
                 <h3 className="text-lg font-semibold text-ink mb-1.5">{step.title}</h3>

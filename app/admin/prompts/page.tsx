@@ -20,11 +20,6 @@ export default async function AdminPromptsPage({
 
   if (category) query = query.eq('category_id', category)
   if (status) query = query.eq('status', status)
-  /*
-    ค้นจากชื่อ prompt แบบไม่สนตัวพิมพ์เล็กใหญ่
-    ต้อง escape % กับ _ ก่อน เพราะเป็นอักขระพิเศษของ LIKE
-    ถ้าไม่ escape พิมพ์ % ตัวเดียวจะกลายเป็น "ตรงกับทุกอย่าง"
-  */
   if (q) {
     const keyword = q.replace(/[%_\\]/g, (ch) => `\\${ch}`)
     query = query.ilike('title', `%${keyword}%`)
@@ -55,7 +50,8 @@ export default async function AdminPromptsPage({
       </div>
 
       <div className="animate-spring-up [animation-delay:120ms] rounded-xl bg-surface border border-line overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-faint font-mono text-xs">
               <th className="px-4 py-3">ชื่อ</th>
@@ -99,6 +95,7 @@ export default async function AdminPromptsPage({
             ))}
           </tbody>
         </table>
+        </div>
 
         {prompts?.length === 0 && (
           <p className="text-center py-10 text-faint font-mono text-sm">ยังไม่มี Prompt</p>

@@ -204,8 +204,10 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-base/90 backdrop-blur border-b border-line">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-2 sm:gap-4">
+    <header
+      className="sticky top-0 z-50 border-b border-[color-mix(in_srgb,var(--line)_65%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_0_color-mix(in_srgb,var(--ink)_7%,transparent),0_8px_30px_-16px_rgba(0,0,0,0.45)]"
+    >
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center gap-2 sm:gap-4">
         <Link
           href="/"
           className="text-base sm:text-lg font-bold bg-gradient-to-r from-accent to-accent2 bg-clip-text text-transparent shrink-0"
@@ -242,7 +244,7 @@ export default function Navbar() {
             </button>
 
             {moreOpen && (
-              <div className="absolute top-full left-0 mt-2 w-44 rounded-lg bg-surface border border-line shadow-[0_0_24px_rgba(0,0,0,0.5)] overflow-hidden py-1">
+              <div className="absolute top-full left-0 mt-2 w-44 rounded-lg border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] backdrop-blur-xl shadow-[0_0_24px_rgba(0,0,0,0.5)] overflow-hidden py-1">
                 {moreItems.map((item) => (
                   <Link
                     key={item.href}
@@ -343,7 +345,7 @@ export default function Navbar() {
                   <div
                     role="menu"
                     aria-hidden={!userOpen}
-                    className={`absolute right-0 top-full z-50 mt-2 w-60 origin-top-right transform-gpu overflow-hidden rounded-xl border border-line bg-surface p-1 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)] transition-[opacity,transform,visibility] will-change-[opacity,transform] motion-reduce:transition-none ${
+                    className={`absolute right-0 top-full z-50 mt-2 w-60 origin-top-right transform-gpu overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] backdrop-blur-xl p-1 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)] transition-[opacity,transform,visibility] will-change-[opacity,transform] motion-reduce:transition-none ${
                       userOpen
                         ? 'visible translate-y-0 scale-100 opacity-100 duration-[260ms] ease-[cubic-bezier(0.34,1.28,0.64,1)]'
                         : 'invisible -translate-y-2 scale-[0.94] opacity-0 duration-[150ms] ease-[cubic-bezier(0.4,0,1,1)]'
@@ -464,7 +466,7 @@ export default function Navbar() {
       )}
 
       {/* เมนูมือถือ: แถวที่ 2 แบบเลื่อนได้ เฉพาะจอเล็กกว่า lg */}
-      <div className="lg:hidden border-t border-line px-6 py-2 flex gap-1 overflow-x-auto">
+      <div className="lg:hidden border-t border-line px-4 sm:px-6 py-2 flex flex-wrap gap-1.5">
         {[...primaryItems, ...moreItems].map((item) => (
           <Link key={item.href} href={item.href} className={linkClass(isActive(item.href))}>
             <span className="flex items-center gap-1.5">{navIcon(item.href)}{item.label}</span>

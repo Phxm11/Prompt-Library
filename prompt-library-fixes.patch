@@ -1,0 +1,143 @@
+diff --git a/app/admin/AdminSidebar.tsx b/app/admin/AdminSidebar.tsx
+index 8c9d13d..9a80cca 100644
+--- a/app/admin/AdminSidebar.tsx
++++ b/app/admin/AdminSidebar.tsx
+@@ -15,17 +15,19 @@ export default function AdminSidebar() {
+   const pathname = usePathname()
+ 
+   return (
+-    <aside className="w-56 shrink-0 border-r border-line px-4 py-8">
+-      <h2 className="section-title text-xl font-extrabold mb-6 px-3">Control Panel</h2>
++    // จอเล็กกว่า lg: แถบเมนูแนวนอนเลื่อนได้ ติดด้านบนใต้ navbar หลัก แทนคอลัมน์ข้างที่กิน 224px ถาวร
++    // (เดิม w-56 shrink-0 แสดงตลอดไม่มีทางซ่อน พังทันทีบนจอมือถือ)
++    <aside className="shrink-0 border-b border-line px-4 py-3 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-56 lg:border-b-0 lg:border-r lg:px-4 lg:py-8">
++      <h2 className="section-title hidden text-xl font-extrabold mb-6 px-3 lg:block">Control Panel</h2>
+ 
+-      <nav className="flex flex-col gap-1">
++      <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
+         {items.map((item) => {
+           const active = pathname === item.href
+           return (
+             <Link
+               key={item.href}
+               href={item.href}
+-              className={`px-3 py-2 rounded-lg text-sm font-mono transition-all ${
++              className={`shrink-0 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-mono transition-all ${
+                 active
+                   ? 'text-accent2 bg-accent2/10 shadow-[0_0_12px_rgba(255,62,200,0.2)]'
+                   : 'text-muted hover:text-accent2 hover:bg-accent2/5'
+@@ -38,7 +40,7 @@ export default function AdminSidebar() {
+ 
+         <Link
+           href="/"
+-          className="px-3 py-2 rounded-lg text-sm font-mono text-faint hover:text-accent mt-4 border-t border-line pt-4"
++          className="shrink-0 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-mono text-faint hover:text-accent lg:mt-4 lg:border-t lg:border-line lg:pt-4"
+         >
+           ← กลับหน้าเว็บหลัก
+         </Link>
+diff --git a/app/admin/layout.tsx b/app/admin/layout.tsx
+index 6370b9a..0fb39f1 100644
+--- a/app/admin/layout.tsx
++++ b/app/admin/layout.tsx
+@@ -24,9 +24,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
+   }
+ 
+   return (
+-    <div className="min-h-screen bg-base flex">
++    // จอเล็กกว่า lg: ซ้อนกันเป็นคอลัมน์ (แถบเมนูอยู่บน เนื้อหาอยู่ล่าง) แทนการเรียงข้างกันที่ดันเนื้อหาแคบเกินไป
++    <div className="min-h-screen bg-base flex flex-col lg:flex-row">
+       <AdminSidebar />
+-      <main className="flex-1 px-8 py-8 max-w-6xl">{children}</main>
++      <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-8 max-w-6xl">{children}</main>
+     </div>
+   )
+ }
+diff --git a/app/admin/prompts/page.tsx b/app/admin/prompts/page.tsx
+index cca6c4d..b32705c 100644
+--- a/app/admin/prompts/page.tsx
++++ b/app/admin/prompts/page.tsx
+@@ -55,7 +55,9 @@ export default async function AdminPromptsPage({
+       </div>
+ 
+       <div className="animate-spring-up [animation-delay:120ms] rounded-xl bg-surface border border-line overflow-hidden">
+-        <table className="w-full text-sm">
++        {/* จอแคบ: เลื่อนตารางแนวนอนแทนการบีบคอลัมน์จนอ่านไม่ออก ตั้ง min-w กันคอลัมน์ยุบเกินไป */}
++        <div className="overflow-x-auto">
++        <table className="w-full min-w-[720px] text-sm">
+           <thead>
+             <tr className="border-b border-line text-left text-faint font-mono text-xs">
+               <th className="px-4 py-3">ชื่อ</th>
+@@ -99,6 +101,7 @@ export default async function AdminPromptsPage({
+             ))}
+           </tbody>
+         </table>
++        </div>
+ 
+         {prompts?.length === 0 && (
+           <p className="text-center py-10 text-faint font-mono text-sm">ยังไม่มี Prompt</p>
+diff --git a/app/admin/users/page.tsx b/app/admin/users/page.tsx
+index 6e5d79e..6b66e01 100644
+--- a/app/admin/users/page.tsx
++++ b/app/admin/users/page.tsx
+@@ -47,7 +47,9 @@ export default async function AdminUsersPage({
+       </div>
+ 
+       <div className="animate-spring-up [animation-delay:120ms] rounded-xl bg-surface border border-line overflow-hidden">
+-        <table className="w-full text-sm">
++        {/* จอแคบ: เลื่อนตารางแนวนอนแทนการบีบคอลัมน์จนอ่านไม่ออก ตั้ง min-w กันคอลัมน์ยุบเกินไป */}
++        <div className="overflow-x-auto">
++        <table className="w-full min-w-[560px] text-sm">
+           <thead>
+             <tr className="border-b border-line text-left text-faint font-mono text-xs">
+               <th className="px-4 py-3">ผู้ใช้</th>
+@@ -116,6 +118,7 @@ export default async function AdminUsersPage({
+             ))}
+           </tbody>
+         </table>
++        </div>
+ 
+         {users?.length === 0 && (
+           <p className="text-center py-10 text-faint font-mono text-sm">ยังไม่มีผู้ใช้</p>
+diff --git a/app/icon.tsx b/app/icon.tsx
+index 4f018ca..99bb7d8 100644
+--- a/app/icon.tsx
++++ b/app/icon.tsx
+@@ -1,12 +1,18 @@
+ import { ImageResponse } from 'next/og'
++import { readFile } from 'node:fs/promises'
++import { join } from 'node:path'
+ 
+-// ก่อนหน้านี้ไม่มีไฟล์ favicon เลย เบราว์เซอร์เลยโชว์ไอคอนเปล่า ๆ ที่แท็บ
+-// ใช้ ImageResponse สร้างขึ้นตอน build/request แทนการเตรียมไฟล์ภาพเอง (ยังไม่มีโลโก้จริง)
+-// สีตรงกับธีมหลักของเว็บ (พื้นเข้ม + ฟ้านีออน) ใน app/globals.css
+ export const size = { width: 32, height: 32 }
+ export const contentType = 'image/png'
+ 
+-export default function Icon() {
++export default async function Icon() {
++  // ImageResponse render ผ่าน Satori ฝั่งเซิร์ฟเวอร์ ไม่ใช่เบราว์เซอร์
++  // <img src="..."> จึงต้องเป็น absolute URL หรือ data URI เท่านั้น path แบบ "/images/xxx.png" ใช้ไม่ได้
++  // (นี่คือสาเหตุของ error "Image source must be an absolute URL")
++  const file = await readFile(join(process.cwd(), 'public', 'images', 'logo.png'))
++  const base64 = file.toString('base64')
++  const dataUrl = `data:image/png;base64,${base64}`
++
+   return new ImageResponse(
+     (
+       <div
+@@ -18,13 +24,10 @@ export default function Icon() {
+           justifyContent: 'center',
+           background: '#0a0a0f',
+           borderRadius: 6,
+-          color: '#67e8f9',
+-          fontSize: 20,
+-          fontWeight: 700,
+-          fontFamily: 'monospace',
+         }}
+       >
+-        P
++        {/* eslint-disable-next-line @next/next/no-img-element */}
++        <img src={dataUrl} width={32} height={32} style={{ objectFit: 'cover' }} />
+       </div>
+     ),
+     { ...size }
