@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import AdminReviewActions from '@/app/admin/reviews/AdminReviewActions'
 import AdminReviewFilters from '@/app/admin/reviews/AdminReviewFilters'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 
 export default async function AdminReviewsPage({
   searchParams,
@@ -56,7 +58,7 @@ export default async function AdminReviewsPage({
         จัดการรีวิว
       </h1>
 
-      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <ErrorState message={error.message} className="mb-4" />}
 
       <div className="animate-spring-up [animation-delay:60ms] relative z-20">
         <AdminReviewFilters total={count ?? reviews?.length ?? 0} />
@@ -89,9 +91,12 @@ export default async function AdminReviewsPage({
         ))}
 
         {reviews?.length === 0 && (
-          <p className="text-center py-10 text-faint font-mono text-sm">
-            {rating || reviewer || q ? 'ไม่พบรีวิวที่ตรงกับตัวกรอง' : 'ยังไม่มีรีวิว'}
-          </p>
+          <EmptyState
+            icon="star"
+            title={rating || reviewer || q ? 'ไม่พบรีวิวที่ตรงกับตัวกรอง' : 'ยังไม่มีรีวิว'}
+            bordered={false}
+            compact
+          />
         )}
       </div>
     </div>

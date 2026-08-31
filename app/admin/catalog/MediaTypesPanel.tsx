@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/components/Toast'
 import ConfirmDialog from '@/app/components/ConfirmDialog'
+import EmptyState from '@/app/components/EmptyState'
 import { inputClass, labelClass, friendlyDbError } from '@/app/admin/catalog/styles'
 
 export type MediaType = {
@@ -224,7 +225,7 @@ export default function MediaTypesPanel({ initialRows }: { initialRows: MediaTyp
         })}
 
         {rows.length === 0 && (
-          <p className="text-sm text-faint font-mono text-center py-8">ยังไม่มีประเภทสื่อ</p>
+          <EmptyState icon="image" title="ยังไม่มีประเภทสื่อ" bordered={false} compact />
         )}
       </div>
 

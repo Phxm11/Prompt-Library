@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PromptCard from '@/app/components/PromptCard'
 import Icon from '@/app/components/Icon'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 
 type Prompt = {
   prompt_id: string
@@ -45,7 +47,7 @@ export default async function PublicProfilePage({
     เอาเฉพาะ prompt สาธารณะ คนดูจึงเห็นเท่าที่เจ้าของเปิดไว้ ไม่ว่าจะเป็นใครก็ตาม
     (RLS กันอีกชั้นอยู่แล้ว แต่กรองตรงนี้ด้วยจะได้ไม่ต้องพึ่ง policy อย่างเดียว)
   */
-  const { data: prompts, count } = await supabase
+  const { data: prompts, count, error: promptsError } = await supabase
     .from('prompts')
     .select(
       'prompt_id, title, prompt_text, cover_image_url, cover_position, view_count, like_count, copy_count, categories(name), media_types(name)',
@@ -128,10 +130,14 @@ export default async function PublicProfilePage({
           Prompt ของ {name}
         </h2>
 
-        {list.length === 0 ? (
-          <div className="animate-spring-up [animation-delay:120ms] rounded-xl border border-dashed border-line py-12 text-center text-muted">
-            ยังไม่มี Prompt สาธารณะ
-          </div>
+        {promptsError ? (
+          <ErrorState message={promptsError.message} className="animate-spring-up [animation-delay:120ms]" />
+        ) : list.length === 0 ? (
+          <EmptyState
+            icon="inbox"
+            title="ยังไม่มี Prompt สาธารณะ"
+            className="animate-spring-up [animation-delay:120ms]"
+          />
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

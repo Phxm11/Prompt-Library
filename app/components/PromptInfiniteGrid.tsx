@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PromptCard from '@/app/components/PromptCard'
+import EmptyState from '@/app/components/EmptyState'
 import { promptSearchFilter } from '@/lib/promptSearch'
 
 const PAGE_SIZE = 12
@@ -166,11 +167,11 @@ export default function PromptInfiniteGrid({
   return (
     <>
       {prompts.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-muted font-mono text-sm">
-            {'>'} ไม่พบ Prompt ที่ตรงกับตัวกรองนี้
-          </p>
-        </div>
+        <EmptyState
+          icon="search"
+          title={mode === 'search' ? 'ไม่พบ Prompt ที่ตรงกับคำค้นหานี้' : 'ไม่พบ Prompt ที่ตรงกับตัวกรองนี้'}
+          description={mode === 'search' ? 'ลองใช้คำอื่น หรือสะกดให้สั้นลง' : 'ลองเปลี่ยนหมวดหมู่ ประเภทสื่อ หรือโมเดล AI ดู'}
+        />
       )}
 
       {/* isolate = การ์ดที่ยกตัวขึ้นตอน hover (z-10) จะยกได้แค่ในกริดนี้ ไม่ทะลุขึ้นไปทับเมนู/รายการแนะนำข้างบน */}

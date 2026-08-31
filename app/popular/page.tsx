@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 
 export default async function PopularPromptsPage() {
   const supabase = await createClient()
@@ -41,12 +43,14 @@ export default async function PopularPromptsPage() {
         เรียงตามจำนวนคนที่คัดลอกไปใช้งานจริง (นับคนละครั้งเดียว)
       </p>
 
-      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <ErrorState message={error.message} className="mb-8" />}
 
-      {prompts.length === 0 && (
-        <p className="text-muted font-mono text-sm py-12 text-center">
-          {'>'} ยังไม่มีข้อมูลการใช้งาน
-        </p>
+      {!error && prompts.length === 0 && (
+        <EmptyState
+          icon="star"
+          title="ยังไม่มีข้อมูลการใช้งาน"
+          description="อันดับจะเริ่มขึ้นหลังมีคนคัดลอก prompt ไปใช้"
+        />
       )}
 
       <div className="flex flex-col gap-2.5">

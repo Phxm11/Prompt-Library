@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import AdminPromptActions from '@/app/admin/prompts/AdminPromptActions'
 import AdminPromptFilters from '@/app/admin/prompts/AdminPromptFilters'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 
 export default async function AdminPromptsPage({
   searchParams,
@@ -20,6 +22,11 @@ export default async function AdminPromptsPage({
 
   if (category) query = query.eq('category_id', category)
   if (status) query = query.eq('status', status)
+  /*
+    ค้นจากชื่อ prompt แบบไม่สนตัวพิมพ์เล็กใหญ่
+    ต้อง escape % กับ _ ก่อน เพราะเป็นอักขระพิเศษของ LIKE
+    ถ้าไม่ escape พิมพ์ % ตัวเดียวจะกลายเป็น "ตรงกับทุกอย่าง"
+  */
   if (q) {
     const keyword = q.replace(/[%_\\]/g, (ch) => `\\${ch}`)
     query = query.ilike('title', `%${keyword}%`)
@@ -40,7 +47,7 @@ export default async function AdminPromptsPage({
         จัดการ Prompt ทั้งหมด
       </h1>
 
-      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <ErrorState message={error.message} className="mb-4" />}
 
       <div className="animate-spring-up [animation-delay:60ms] relative z-20">
         <AdminPromptFilters
@@ -50,6 +57,7 @@ export default async function AdminPromptsPage({
       </div>
 
       <div className="animate-spring-up [animation-delay:120ms] rounded-xl bg-surface border border-line overflow-hidden">
+        {/* จอแคบ: เลื่อนตารางแนวนอนแทนการบีบคอลัมน์จนอ่านไม่ออก ตั้ง min-w กันคอลัมน์ยุบเกินไป */}
         <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
@@ -98,7 +106,12 @@ export default async function AdminPromptsPage({
         </div>
 
         {prompts?.length === 0 && (
-          <p className="text-center py-10 text-faint font-mono text-sm">ยังไม่มี Prompt</p>
+          <EmptyState
+            icon="inbox"
+            title={category || status || q ? 'ไม่พบ Prompt ที่ตรงกับตัวกรอง' : 'ยังไม่มี Prompt'}
+            bordered={false}
+            compact
+          />
         )}
       </div>
     </div>

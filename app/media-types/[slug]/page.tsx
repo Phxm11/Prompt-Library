@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptCard from '@/app/components/PromptCard'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -74,12 +76,15 @@ export default async function MediaTypeDetailPage({
         <h1 className="section-title text-4xl font-extrabold">{mediaType.name}</h1>
       </div>
 
-      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <ErrorState message={error.message} className="mb-8" />}
 
-      {prompts && prompts.length === 0 && (
-        <p className="text-muted font-mono text-sm py-12 text-center">
-          {'>'} ยังไม่มี Prompt ในประเภทสื่อนี้
-        </p>
+      {!error && prompts && prompts.length === 0 && (
+        <EmptyState
+          icon={mediaIcons[mediaType.slug] ?? 'grid'}
+          title="ยังไม่มี Prompt ในประเภทสื่อนี้"
+          description="ลองดูประเภทสื่ออื่น หรือเลือกดู prompt ทั้งหมด"
+          action={{ label: 'ดู Prompt ทั้งหมด', href: '/home' }}
+        />
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -16,6 +16,7 @@ export default function AdminSidebar() {
 
   return (
     // จอเล็กกว่า lg: แถบเมนูแนวนอนเลื่อนได้ ติดด้านบนใต้ navbar หลัก แทนคอลัมน์ข้างที่กิน 224px ถาวร
+    // (เดิม w-56 shrink-0 แสดงตลอดไม่มีทางซ่อน พังทันทีบนจอมือถือ)
     <aside className="shrink-0 border-b border-line px-4 py-3 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-56 lg:border-b-0 lg:border-r lg:px-4 lg:py-8">
       <h2 className="section-title hidden text-xl font-extrabold mb-6 px-3 lg:block">Control Panel</h2>
 

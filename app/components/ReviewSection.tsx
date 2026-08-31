@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import StarRating from '@/app/components/StarRating'
 import ConfirmDialog from '@/app/components/ConfirmDialog'
 import { showToast } from '@/app/components/Toast'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 import { checkProfanity } from '@/lib/profanity'
 
 type Review = {
@@ -47,6 +49,7 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
 
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [guestReviewIds, setGuestReviewIds] = useState<string[]>([])
 
@@ -78,13 +81,19 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
 
   async function loadReviews() {
     setLoading(true)
-    const { data } = await supabase
+    // เดิมโค้ดนี้ไม่เช็ค error เลย พอโหลดพัง หน้าจะเงียบแล้วโชว์ "ยังไม่มีรีวิว" ทั้งที่จริงคือโหลดไม่สำเร็จ
+    const { data, error: fetchError } = await supabase
       .from('reviews')
       .select(SELECT_COLUMNS)
       .eq('prompt_id', promptId)
       .order('created_at', { ascending: false })
 
-    setReviews((data as unknown as Review[]) ?? [])
+    if (fetchError) {
+      setLoadError(fetchError.message)
+    } else {
+      setLoadError(null)
+      setReviews((data as unknown as Review[]) ?? [])
+    }
     setLoading(false)
   }
 
@@ -300,10 +309,17 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
       {/* รายการรีวิว */}
       {loading && <p className="text-faint font-mono text-sm">กำลังโหลด...</p>}
 
-      {!loading && reviews.length === 0 && (
-        <p className="text-faint font-mono text-sm py-6 text-center">
-          {'>'} ยังไม่มีรีวิว เป็นคนแรกที่ให้คะแนน prompt นี้สิ
-        </p>
+      {!loading && loadError && <ErrorState message={loadError} className="my-4" />}
+
+      {!loading && !loadError && reviews.length === 0 && (
+        <EmptyState
+          icon="star"
+          title="ยังไม่มีรีวิว"
+          description="เป็นคนแรกที่ให้คะแนน prompt นี้สิ"
+          bordered={false}
+          compact
+          className="my-4"
+        />
       )}
 
       <div className="space-y-3">

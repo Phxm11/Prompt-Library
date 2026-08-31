@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import PromptCard from '@/app/components/PromptCard'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 
 type Prompt = {
   prompt_id: string
@@ -55,19 +57,15 @@ export default async function FavoritesPage() {
       <h1 className="animate-spring-up section-title text-4xl font-extrabold mb-1 text-ink">รายการโปรด</h1>
       <p className="animate-spring-up [animation-delay:60ms] text-muted text-sm mb-8">Prompt ที่คุณบันทึกไว้</p>
 
-      {error && (
-        <p className="text-accent2 bg-accent2/10 border border-accent2/30 rounded-lg px-4 py-3">
-          เกิดข้อผิดพลาด: {error.message}
-        </p>
-      )}
+      {error && <ErrorState message={error.message} />}
 
       {!error && prompts.length === 0 && (
-        <div className="animate-spring-up [animation-delay:120ms] text-center py-16 border border-dashed border-line rounded-xl">
-          <p className="text-muted font-mono text-sm">{'> '}ยังไม่มี Prompt ในรายการโปรด</p>
-          <Link href="/home" className="inline-block mt-4 text-sm text-accent hover:text-accent-soft">
-            ไปเลือก Prompt
-          </Link>
-        </div>
+        <EmptyState
+          icon="heart"
+          title="ยังไม่มี Prompt ในรายการโปรด"
+          description="กดรูปหัวใจที่ prompt ที่ชอบ เพื่อเก็บไว้ดูภายหลัง"
+          action={{ label: 'ไปเลือก Prompt', href: '/home' }}
+        />
       )}
 
       {prompts.length > 0 && (

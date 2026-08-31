@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptCard from '@/app/components/PromptCard'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -67,12 +69,15 @@ export default async function AiModelDetailPage({
       </h1>
       <p className="text-muted text-sm mb-8 font-mono">{aiModel.provider}</p>
 
-      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <ErrorState message={error.message} className="mb-8" />}
 
-      {prompts.length === 0 && (
-        <p className="text-muted font-mono text-sm py-12 text-center">
-          {'>'} ยังไม่มี Prompt สำหรับโมเดลนี้
-        </p>
+      {!error && prompts.length === 0 && (
+        <EmptyState
+          icon="cpu"
+          title="ยังไม่มี Prompt สำหรับโมเดลนี้"
+          description="ลองดูโมเดล AI อื่น หรือเลือกดู prompt ทั้งหมด"
+          action={{ label: 'ดู Prompt ทั้งหมด', href: '/home' }}
+        />
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

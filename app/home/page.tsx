@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptFilters from '@/app/components/PromptFilters'
 import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
+import ErrorState from '@/app/components/ErrorState'
 
 const PAGE_SIZE = 12
 
@@ -95,11 +96,7 @@ export default async function BrowsePromptsPage({
           />
         </div>
 
-        {error && (
-          <p className="text-accent2 bg-accent2/10 border border-accent2/30 rounded-lg px-4 py-3 mt-4">
-            เกิดข้อผิดพลาด: {error.message}
-          </p>
-        )}
+        {error && <ErrorState message={error.message} className="mt-4" />}
 
         <div className="mt-6">
           <PromptInfiniteGrid

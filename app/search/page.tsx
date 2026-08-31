@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
 import SearchBar from '@/app/components/SearchBar'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 import { promptSearchFilter } from '@/lib/promptSearch'
 
 const PAGE_SIZE = 12
@@ -63,16 +65,14 @@ export default async function SearchPage({
         </p>
       )}
 
-      {error && (
-        <p className="text-accent2 bg-accent2/10 border border-accent2/30 rounded-lg px-4 py-3">
-          เกิดข้อผิดพลาด: {error}
-        </p>
-      )}
+      {error && <ErrorState message={error} />}
 
       {query && !error && prompts.length === 0 && (
-        <p className="text-muted font-mono text-sm py-12 text-center">
-          {'>'} ไม่พบ Prompt ที่ตรงกับคำค้นหานี้ ลองใช้คำอื่นดูครับ
-        </p>
+        <EmptyState
+          icon="search"
+          title="ไม่พบ Prompt ที่ตรงกับคำค้นหานี้"
+          description="ลองใช้คำอื่น หรือสะกดให้สั้นลงดูครับ"
+        />
       )}
 
       {query && !error && prompts.length > 0 && (

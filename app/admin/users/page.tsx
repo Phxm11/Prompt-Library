@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import AdminUserActions from '@/app/admin/users/AdminUserActions'
 import AdminUserFilters from '@/app/admin/users/AdminUserFilters'
+import EmptyState from '@/app/components/EmptyState'
+import ErrorState from '@/app/components/ErrorState'
 
 export default async function AdminUsersPage({
   searchParams,
@@ -22,6 +24,11 @@ export default async function AdminUsersPage({
   if (role) query = query.eq('role', role)
   if (status) query = query.eq('is_banned', status === 'banned')
 
+  /*
+    ค้นทั้ง username และชื่อเล่นด้วยคำเดียว
+    ต้อง escape % _ \ ก่อน เพราะเป็นอักขระพิเศษของ LIKE
+    และ escape , ด้วย เพราะ .or() ใช้จุลภาคคั่นเงื่อนไข ถ้าไม่กันจะแตกเป็นสองเงื่อนไข
+  */
   if (q) {
     const keyword = q.replace(/[%_\\]/g, (ch) => `\\${ch}`).replace(/,/g, '')
     query = query.or(`username.ilike.%${keyword}%,display_name.ilike.%${keyword}%`)
@@ -35,13 +42,14 @@ export default async function AdminUsersPage({
         จัดการผู้ใช้
       </h1>
 
-      {error && <p className="text-accent2">เกิดข้อผิดพลาด: {error.message}</p>}
+      {error && <ErrorState message={error.message} className="mb-4" />}
 
       <div className="animate-spring-up [animation-delay:60ms] relative z-20">
         <AdminUserFilters total={count ?? users?.length ?? 0} />
       </div>
 
       <div className="animate-spring-up [animation-delay:120ms] rounded-xl bg-surface border border-line overflow-hidden">
+        {/* จอแคบ: เลื่อนตารางแนวนอนแทนการบีบคอลัมน์จนอ่านไม่ออก ตั้ง min-w กันคอลัมน์ยุบเกินไป */}
         <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
@@ -60,6 +68,10 @@ export default async function AdminUsersPage({
                   <p className="text-faint text-xs font-mono">@{u.username}</p>
                 </td>
                 <td className="px-4 py-3">
+                  {/*
+                    is_banned ยังเป็น true หลังหมดกำหนด เพราะไม่มีใครไปไล่ล้างค่าให้
+                    ตัวตัดสินจริงคือ banned_until เทียบกับตอนนี้ ซึ่งตรงกับที่ is_user_banned() ในฐานข้อมูลใช้
+                  */}
                   {u.is_banned && (!u.banned_until || new Date(u.banned_until) > new Date()) ? (
                     <div className="space-y-1">
                       <span
@@ -111,7 +123,12 @@ export default async function AdminUsersPage({
         </div>
 
         {users?.length === 0 && (
-          <p className="text-center py-10 text-faint font-mono text-sm">ยังไม่มีผู้ใช้</p>
+          <EmptyState
+            icon="user"
+            title={role || status || q ? 'ไม่พบผู้ใช้ที่ตรงกับตัวกรอง' : 'ยังไม่มีผู้ใช้'}
+            bordered={false}
+            compact
+          />
         )}
       </div>
     </div>

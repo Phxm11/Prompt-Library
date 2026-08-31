@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/components/Toast'
 import ConfirmDialog from '@/app/components/ConfirmDialog'
+import EmptyState from '@/app/components/EmptyState'
 import { inputClass, friendlyDbError } from '@/app/admin/catalog/styles'
 
 export type Tag = { tag_id: string; name: string }
@@ -143,7 +144,7 @@ export default function TagsPanel({ initialRows }: { initialRows: Tag[] }) {
         })}
 
         {rows.length === 0 && (
-          <p className="text-sm text-faint font-mono text-center py-8 w-full">ยังไม่มีแท็ก</p>
+          <EmptyState icon="text" title="ยังไม่มีแท็ก" bordered={false} compact className="w-full" />
         )}
       </div>
 

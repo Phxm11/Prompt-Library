@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/components/Toast'
 import ConfirmDialog from '@/app/components/ConfirmDialog'
+import EmptyState from '@/app/components/EmptyState'
 import { inputClass, labelClass, friendlyDbError } from '@/app/admin/catalog/styles'
 
 export type Category = {
@@ -322,7 +323,7 @@ export default function CategoriesPanel({ initialRows }: { initialRows: Category
         })}
 
         {rows.length === 0 && (
-          <p className="text-sm text-faint font-mono text-center py-8">ยังไม่มีหมวดหมู่</p>
+          <EmptyState icon="grid" title="ยังไม่มีหมวดหมู่" bordered={false} compact />
         )}
       </div>
 

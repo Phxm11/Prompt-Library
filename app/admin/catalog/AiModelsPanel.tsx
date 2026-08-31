@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/app/components/Toast'
 import ConfirmDialog from '@/app/components/ConfirmDialog'
+import EmptyState from '@/app/components/EmptyState'
 import SelectMenu from '@/app/components/SelectMenu'
 import { inputClass, labelClass, friendlyDbError } from '@/app/admin/catalog/styles'
 
@@ -307,7 +308,7 @@ export default function AiModelsPanel({
         })}
 
         {rows.length === 0 && (
-          <p className="text-sm text-faint font-mono text-center py-8">ยังไม่มี AI Model</p>
+          <EmptyState icon="cpu" title="ยังไม่มี AI Model" bordered={false} compact />
         )}
       </div>
 

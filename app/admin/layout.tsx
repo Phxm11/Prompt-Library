@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
+    // จอเล็กกว่า lg: ซ้อนกันเป็นคอลัมน์ (แถบเมนูอยู่บน เนื้อหาอยู่ล่าง) แทนการเรียงข้างกันที่ดันเนื้อหาแคบเกินไป
     <div className="min-h-screen bg-base flex flex-col lg:flex-row">
       <AdminSidebar />
       <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-8 max-w-6xl">{children}</main>
