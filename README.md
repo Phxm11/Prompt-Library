@@ -173,8 +173,11 @@ app/
 │   └── new/               # ฟอร์มเพิ่ม/แก้ prompt
 ├── media-types/, ai-models/
 ├── login/, auth/callback/ # OAuth
-├── admin/                 # หลังบ้าน (prompts / users / reviews)
+├── admin/                 # หลังบ้าน (prompts / users / reviews) — เมนูซ้ายกลายเป็นแถบเลื่อนแนวนอนบนจอมือถือ
 └── components/            # component ที่ใช้ร่วมกันทั้งเว็บ
+    ├── EmptyState.tsx     # กล่อง "ยังไม่มีข้อมูล" แบบเดียวกันทั้งเว็บ (ไอคอน + ข้อความ + ปุ่ม CTA เผื่อมี)
+    ├── ErrorState.tsx     # แบนเนอร์ error กลาง ใช้แทนข้อความสีแดงที่เคยเขียนซ้ำคนละแบบทุกหน้า
+    └── PromptTextBlock.tsx # กล่องเนื้อ prompt แบบพับได้ กัน prompt ยาวดันปุ่มคัดลอก/รีวิวตกจอ
 
 lib/
 ├── supabase/              # client ฝั่ง browser และ server
@@ -245,6 +248,9 @@ scripts/
 - **นับตัวอักษรไทยเป็น grapheme** ไม่ใช่ `.length`
 - **อนิเมชันพื้นหลังใช้ `transform` + `opacity` เท่านั้น** ก้อนแสงมี `blur()` รัศมีใหญ่ ถ้าไปขยับ `top`/`left` หน้าจะหนืดทันที
 - **RLS ที่ปฏิเสธจะคืน 0 แถวโดยไม่มี error** ทุกครั้งที่เขียนต้อง `.select()` แล้วนับแถวเอง
+- **หน้าที่โหลดข้อมูล (list/detail) ต้องใช้ `EmptyState`/`ErrorState`** จาก `app/components/` แทนการเขียน `<p>` ข้อความเปล่า ๆ หรือ error banner เอง — และต้องแยกเงื่อนไข "ไม่มีข้อมูล" กับ "โหลดพัง" ออกจากกันเสมอ (query error ที่ไม่เช็คจะดูเหมือนข้อมูลว่างเปล่า ๆ ทั้งที่จริงคือพัง)
+- **prompt/ข้อความยาวให้ใช้ `PromptTextBlock`** (กล่องพับได้) แทนแปะ `<p>` ตรง ๆ ไม่งั้นข้อความยาวจะดันเนื้อหาข้างล่างตกจอ
+- **`ImageResponse` (เช่น `app/icon.tsx`) ต้องใช้ path รูปแบบ absolute URL หรือ data URI เท่านั้น** เพราะ render ผ่าน Satori ฝั่งเซิร์ฟเวอร์ ไม่ใช่เบราว์เซอร์ — path แบบ `/images/xxx.png` ใช้ไม่ได้ ให้อ่านไฟล์ด้วย `fs.readFile` แล้วแปลงเป็น base64 data URI แทน
 
 ## คำสั่งที่ใช้บ่อย
 
@@ -429,8 +435,11 @@ app/
 │   └── new/               # Create / edit form
 ├── media-types/, ai-models/
 ├── login/, auth/callback/ # OAuth
-├── admin/                 # Admin area (prompts / users / reviews)
+├── admin/                 # Admin area (prompts / users / reviews) — sidebar becomes a horizontal scroll bar on mobile
 └── components/            # Shared components
+    ├── EmptyState.tsx     # One consistent "nothing here" block (icon + text + optional CTA)
+    ├── ErrorState.tsx     # One consistent error banner, replacing the ad-hoc red text each page used to have
+    └── PromptTextBlock.tsx # Collapsible prompt body, keeps long prompts from pushing the copy/review UI off-screen
 
 lib/
 ├── supabase/              # Browser and server clients
@@ -501,6 +510,9 @@ Search originally used full-text search over a `tsvector` built with the `simple
 - **Count Thai text in graphemes**, not `.length`
 - **Background animations use `transform` and `opacity` only.** The glow blobs carry a large `blur()`; animating `top`/`left` makes the page crawl
 - **An RLS denial returns zero rows with no error.** Always `.select()` after a write and check the row count yourself
+- **List/detail pages must use `EmptyState`/`ErrorState`** from `app/components/` instead of a hand-rolled `<p>` or error banner — and must always distinguish "no data" from "load failed" (an unchecked query error looks identical to an empty list otherwise)
+- **Long prompt/body text goes through `PromptTextBlock`** (a collapsible box), not a raw `<p>` — otherwise a long prompt pushes everything below it off-screen
+- **`ImageResponse` routes (e.g. `app/icon.tsx`) need an absolute URL or a data URI**, never a relative path — they render server-side via Satori, not in a browser. Read the file with `fs.readFile` and inline it as a base64 data URI instead
 
 ## Scripts
 

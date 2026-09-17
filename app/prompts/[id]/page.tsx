@@ -10,6 +10,7 @@ import LikeButton from '@/app/components/LikeButton'
 import ViewTracker from '@/app/components/ViewTracker'
 import AuthorBadge from '@/app/components/AuthorBadge'
 import PromptOwnerActions from '@/app/components/PromptOwnerActions'
+import PromptTextBlock from '@/app/components/PromptTextBlock'
 
 /*
   ก่อนหน้านี้ทุกหน้า prompt ใช้ title/description เดียวกันหมด (ค่า default จาก app/layout.tsx)
@@ -184,9 +185,7 @@ export default async function PromptDetailPage({
               <p className="text-xs font-mono font-medium text-accent/80 tracking-widest mb-2 uppercase">
                 Prompt
               </p>
-              <p className="text-ink-soft whitespace-pre-wrap text-sm leading-relaxed">
-                {prompt.prompt_text}
-              </p>
+              <PromptTextBlock text={prompt.prompt_text} />
             </div>
 
             <div className="animate-spring-up [animation-delay:450ms]">
