@@ -19,7 +19,11 @@ type ConfirmDialogProps = {
   onCancel: () => void
 }
 
-export default function ConfirmDialog({
+export default function ConfirmDialog(props: ConfirmDialogProps) {
+  return props.open ? <DialogContent {...props} /> : null
+}
+
+function DialogContent({
   open,
   title,
   description,
@@ -33,15 +37,10 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const [value, setValue] = useState('')
-  const [mounted, setMounted] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
-
-  // portal ใช้ได้เฉพาะฝั่ง client เท่านั้น
-  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
     if (!open) return
-    setValue('')
 
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onCancel()
@@ -61,7 +60,7 @@ export default function ConfirmDialog({
     }
   }, [open, onCancel])
 
-  if (!mounted || !open) return null
+  if (!open || typeof document === 'undefined') return null
 
   const accentClass =
     tone === 'danger'

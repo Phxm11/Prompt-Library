@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next'
-import { prisma } from '@/lib/prisma'
 
 /*
   บังคับให้เป็น dynamic (สร้างตอนมีคนเข้าจริง ไม่ใช่ตอน build)
@@ -21,6 +20,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 const MAX_URLS = 5000
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Defer connection configuration until this dynamic route is requested.
+  const { prisma } = await import('@/lib/prisma')
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${siteUrl}/`, changeFrequency: 'daily', priority: 1 },
     { url: `${siteUrl}/popular`, changeFrequency: 'daily', priority: 0.8 },

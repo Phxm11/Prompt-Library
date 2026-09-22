@@ -137,10 +137,12 @@ export default function Navbar() {
   }, [])
 
   // เปลี่ยนหน้าแล้วต้องปิดเมนู ไม่งั้นมันค้างเปิดคาไว้บนหน้าใหม่
-  useEffect(() => {
+  const [menuPath, setMenuPath] = useState(pathname)
+  if (menuPath !== pathname) {
+    setMenuPath(pathname)
     setUserOpen(false)
     setMoreOpen(false)
-  }, [pathname])
+  }
 
   async function handleLogout() {
     // ล้างของที่จำไว้ทันที ไม่ต้องรอ onAuthStateChange ไม่งั้นอาจแวบเห็นรูปเดิมตอนเปลี่ยนหน้า

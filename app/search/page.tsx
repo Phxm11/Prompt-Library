@@ -3,9 +3,9 @@ import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
 import SearchBar from '@/app/components/SearchBar'
 import EmptyState from '@/app/components/EmptyState'
 import ErrorState from '@/app/components/ErrorState'
-import { promptSearchFilter } from '@/lib/promptSearch'
+import { PAGE_SIZE, promptPageQuery, type PromptSummary } from '@/lib/promptQuery'
 
-const PAGE_SIZE = 12
+
 
 export default async function SearchPage({
   searchParams,
@@ -16,25 +16,18 @@ export default async function SearchPage({
   const query = q?.trim() ?? ''
   const supabase = await createClient()
 
-  let prompts: any[] = []
+  let prompts: PromptSummary[] = []
   let hasMore = false
   let error: string | null = null
 
   if (query) {
-    const { data, count, error: searchError } = await supabase
-      .from('prompts')
-      .select('*, categories(name), media_types(name)', { count: 'exact' })
-      .eq('is_public', true)
-      .or(promptSearchFilter(query))
-      .order('created_at', { ascending: false })
-      .order('prompt_id', { ascending: true })
-      .range(0, PAGE_SIZE - 1)
+    const { data, error: searchError } = await promptPageQuery(supabase, { query })
 
     if (searchError) {
       error = searchError.message
     } else {
-      prompts = data ?? []
-      hasMore = (count ?? 0) > PAGE_SIZE
+      prompts = (data ?? []).slice(0, PAGE_SIZE)
+      hasMore = (data ?? []).length > PAGE_SIZE
     }
   }
 
@@ -61,7 +54,7 @@ export default async function SearchPage({
 
       {query && (
         <p className="text-faint text-sm font-mono mb-4">
-          ผลการค้นหาสำหรับ "<span className="text-accent">{query}</span>"
+          ผลการค้นหาสำหรับ &quot;<span className="text-accent">{query}</span>&quot;
         </p>
       )}
 

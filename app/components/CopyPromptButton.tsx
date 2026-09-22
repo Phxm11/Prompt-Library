@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { showToast } from '@/app/components/Toast'
 import { recordCopy } from '@/lib/recordCopy'
-import { getGuestId } from '@/lib/guestId'
 
 type CopyPromptButtonProps = {
   promptId: string
@@ -32,7 +31,7 @@ export default function CopyPromptButton({
       showToast('คัดลอก Prompt แล้ว')
       setTimeout(() => setCopied(false), 2000)
 
-      const { counted } = await recordCopy(promptId, getGuestId())
+      const { counted } = await recordCopy(promptId).catch(() => ({ counted: false }))
 
       if (counted) {
         setCopyCount((prev) => prev + 1)

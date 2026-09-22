@@ -33,7 +33,7 @@ export default async function AdminPromptsPage({
   }
 
   const [{ data: prompts, error, count }, { data: categories }] = await Promise.all([
-    query,
+    query.overrideTypes<{ prompt_id: string; title: string; is_public: boolean; status: string; view_count: number; copy_count: number; created_at: string; categories: { name: string } | null }[], { merge: false }>(),
     supabase
       .from('categories')
       .select('category_id, name')
@@ -71,7 +71,7 @@ export default async function AdminPromptsPage({
             </tr>
           </thead>
           <tbody>
-            {prompts?.map((p: any) => (
+            {prompts?.map((p) => (
               <tr key={p.prompt_id} className="border-b border-line last:border-0">
                 <td className="px-4 py-3 text-ink max-w-xs truncate">{p.title}</td>
                 <td className="px-4 py-3 text-muted font-mono text-xs">

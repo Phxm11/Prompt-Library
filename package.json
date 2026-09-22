@@ -9,7 +9,11 @@
     "lint": "eslint",
     "prisma:pull": "prisma db pull",
     "prisma:generate": "prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "next typegen && tsc --noEmit",
+    "db:check": "node scripts/apply-hardening.mjs --check",
+    "db:harden": "node scripts/apply-hardening.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",
@@ -30,6 +34,9 @@
     "eslint-config-next": "16.2.11",
     "prisma": "^7.9.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@electric-sql/pglite": "0.4.3",
+    "pg": "8.22.0",
+    "dotenv": "17.4.2"
   }
 }

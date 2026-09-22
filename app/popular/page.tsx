@@ -21,7 +21,7 @@ export default async function PopularPromptsPage() {
     media_type_name: string | null
   }
 
-  const prompts: PromptData[] = (rows ?? []).map((r: any) => ({
+  const prompts: PromptData[] = (rows ?? []).map((r: PromptData) => ({
     prompt_id: r.prompt_id,
     title: r.title,
     prompt_text: r.prompt_text,

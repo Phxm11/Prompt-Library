@@ -28,14 +28,12 @@ export default function SelectMenu({
   className = '',
 }: SelectMenuProps) {
   const [open, setOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [rect, setRect] = useState<{ top: number; left: number; width: number; flip: boolean } | null>(null)
 
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
 
-  useEffect(() => setMounted(true), [])
 
   // รวมตัวเลือก "ทั้งหมด" (ค่าว่าง) เข้าไปเป็นรายการแรก ถ้ามี placeholder
   const items: SelectOption[] = placeholder
@@ -103,12 +101,16 @@ export default function SelectMenu({
   useEffect(() => {
     if (!open) return
     const current = Math.max(items.findIndex((o) => o.value === value), 0)
-    setActiveIndex(current)
     requestAnimationFrame(() => {
       listRef.current?.querySelectorAll('li')[current]?.scrollIntoView({ block: 'nearest' })
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  function openMenu() {
+    setActiveIndex(Math.max(items.findIndex(o => o.value === value), 0))
+    setOpen(true)
+  }
 
   function pick(v: string) {
     onChange(v)
@@ -123,7 +125,7 @@ export default function SelectMenu({
 
     if (!open && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown')) {
       e.preventDefault()
-      setOpen(true)
+      openMenu()
       return
     }
 
@@ -200,7 +202,7 @@ export default function SelectMenu({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => open ? setOpen(false) : openMenu()}
         onKeyDown={onKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -217,7 +219,7 @@ export default function SelectMenu({
         </span>
       </button>
 
-      {mounted && panel ? createPortal(panel, document.body) : null}
+      {panel ? createPortal(panel, document.body) : null}
     </div>
   )
 }

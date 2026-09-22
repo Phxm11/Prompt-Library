@@ -1,28 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PromptCard from '@/app/components/PromptCard'
 import EmptyState from '@/app/components/EmptyState'
-import { promptSearchFilter } from '@/lib/promptSearch'
-
-const PAGE_SIZE = 12
-
-type Prompt = {
-  prompt_id: string
-  title: string
-  prompt_text: string
-  cover_image_url: string | null
-  cover_position?: string | null
-  view_count: number
-  like_count: number
-  copy_count?: number
-  categories: { name: string } | null
-  media_types: { name: string } | null
-}
+import ErrorState from '@/app/components/ErrorState'
+import { PAGE_SIZE, promptPageQuery, type PromptSummary } from '@/lib/promptQuery'
 
 type PromptInfiniteGridProps = {
-  initialPrompts: Prompt[]
+  initialPrompts: PromptSummary[]
   initialHasMore: boolean
   mode: 'browse' | 'search'
   categoryId?: string | null
@@ -42,101 +28,45 @@ export default function PromptInfiniteGrid({
 }: PromptInfiniteGridProps) {
   const supabase = createClient()
 
-  // ถ้ามีการกรองด้วยโมเดล AI ต้อง fetch ใหม่ทั้งหมดฝั่ง client ตอน mount
-  // (server ไม่ได้กรองส่วนนี้ให้ เพื่อให้ server-side query เรียบง่ายและเร็ว)
-  const needsClientRefetch = mode === 'browse' && Boolean(aiModelId)
-
-  const [prompts, setPrompts] = useState<Prompt[]>(needsClientRefetch ? [] : initialPrompts)
-  const [hasMore, setHasMore] = useState(needsClientRefetch ? true : initialHasMore)
-  const [loading, setLoading] = useState(needsClientRefetch)
-  const [initializing, setInitializing] = useState(needsClientRefetch)
+  const [prompts, setPrompts] = useState(initialPrompts)
+  const [hasMore, setHasMore] = useState(initialHasMore)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const offset = useRef(initialPrompts.length)
+  const inFlight = useRef(false)
 
-  async function getAllowedIdsForAiModel(): Promise<string[] | null> {
-    if (mode !== 'browse' || !aiModelId) return null
-    const { data, error } = await supabase
-      .from('prompt_ai_models')
-      .select('prompt_id')
-      .eq('ai_model_id', aiModelId)
-    if (error) return []
-    return (data ?? []).map((r: { prompt_id: string }) => r.prompt_id)
-  }
-
-  async function fetchPage(from: number, to: number) {
-    let allowedIds: string[] | null = null
-    if (mode === 'browse' && aiModelId) {
-      allowedIds = await getAllowedIdsForAiModel()
-      if (!allowedIds || allowedIds.length === 0) {
-        return { data: [] as Prompt[], reachedEnd: true }
-      }
-    }
-
-    let q = supabase
-      .from('prompts')
-      .select('*, categories(name), media_types(name)')
-      .eq('is_public', true)
-      .order('created_at', { ascending: false })
-      .order('prompt_id', { ascending: true })
-      .range(from, to)
-
-    if (mode === 'browse') {
-      if (categoryId) q = q.eq('category_id', categoryId)
-      if (mediaTypeId) q = q.eq('media_type_id', mediaTypeId)
-      if (allowedIds) q = q.in('prompt_id', allowedIds)
-    }
-    if (mode === 'search' && query) {
-      q = q.or(promptSearchFilter(query))
-    }
-
-    const { data, error } = await q
-    if (error) return { data: [] as Prompt[], reachedEnd: true }
-    return { data: data ?? [], reachedEnd: (data ?? []).length < PAGE_SIZE }
-  }
-
-  // ตอน mount: ถ้าต้อง refetch เพราะกรองด้วยโมเดล AI ให้โหลดหน้าแรกใหม่เอง
-  useEffect(() => {
-    if (!needsClientRefetch) return
-
-    let cancelled = false
-    setInitializing(true)
+  const loadMore = useCallback(async () => {
+    if (inFlight.current || !hasMore) return
+    inFlight.current = true
     setLoading(true)
-
-    fetchPage(0, PAGE_SIZE - 1).then(({ data, reachedEnd }) => {
-      if (cancelled) return
-      setPrompts(data)
-      setHasMore(!reachedEnd)
+    setError(null)
+    try {
+      const { data, error } = await promptPageQuery(supabase, {
+        categoryId, mediaTypeId, aiModelId, query: mode === 'search' ? query : undefined,
+      }, offset.current)
+      if (error) throw error
+      const page = (data ?? []).slice(0, PAGE_SIZE)
+      offset.current += page.length
+      setPrompts(previous => {
+        const ids = new Set(previous.map(p => p.prompt_id))
+        return [...previous, ...page.filter(p => !ids.has(p.prompt_id))]
+      })
+      setHasMore((data ?? []).length > PAGE_SIZE)
+    } catch {
+      setError('โหลดรายการเพิ่มไม่สำเร็จ กรุณาลองใหม่')
+    } finally {
+      inFlight.current = false
       setLoading(false)
-      setInitializing(false)
-    })
-
-    return () => {
-      cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  async function loadMore() {
-    if (loading || !hasMore || initializing) return
-    setLoading(true)
-
-    const from = prompts.length
-    const to = from + PAGE_SIZE - 1
-    const { data, reachedEnd } = await fetchPage(from, to)
-
-    setPrompts((prev) => {
-      const existingIds = new Set(prev.map((p) => p.prompt_id))
-      const uniqueNewData = data.filter((p: Prompt) => !existingIds.has(p.prompt_id))
-      return [...prev, ...uniqueNewData]
-    })
-    setHasMore(!reachedEnd)
-    setLoading(false)
-  }
+  }, [supabase, hasMore, categoryId, mediaTypeId, aiModelId, mode, query])
 
   useEffect(() => {
+    if (error || loading || !hasMore) return
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          loadMore()
+          void loadMore()
         }
       },
       { rootMargin: '400px' }
@@ -148,21 +78,7 @@ export default function PromptInfiniteGrid({
     return () => {
       if (el) observer.unobserve(el)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prompts.length, hasMore, loading, initializing])
-
-  if (initializing) {
-    return (
-      <div className="isolate grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-xl overflow-hidden bg-surface border border-line animate-pulse aspect-[4/5]"
-          />
-        ))}
-      </div>
-    )
-  }
+  }, [prompts.length, hasMore, loading, error, loadMore])
 
   return (
     <>
@@ -182,9 +98,15 @@ export default function PromptInfiniteGrid({
         ))}
       </div>
 
+      {error && (
+        <div className="my-4 space-y-3">
+          <ErrorState message={error} />
+          <button onClick={() => void loadMore()} disabled={loading} className="text-accent underline">ลองใหม่</button>
+        </div>
+      )}
       <div ref={sentinelRef} className="h-1" />
 
-      {loading && !initializing && (
+      {loading && (
         <div className="flex items-center justify-center gap-2 py-8 text-accent/80 font-mono text-sm">
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse [animation-delay:150ms]" />

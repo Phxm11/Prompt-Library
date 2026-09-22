@@ -57,7 +57,7 @@ export default async function AdminDashboardPage() {
             Prompt แยกตามหมวดหมู่
           </p>
           <div className="rounded-xl bg-surface border border-line p-5 space-y-3">
-            {data.prompts_by_category.map((c: any) => (
+            {data.prompts_by_category.map((c: { name: string; prompt_count: number }) => (
               <div key={c.name} className="flex items-center gap-3">
                 <span className="text-sm text-ink-soft w-32 shrink-0 font-mono">{c.name}</span>
                 <div className="flex-1 h-2 rounded-full bg-base overflow-hidden">

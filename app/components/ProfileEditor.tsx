@@ -218,6 +218,8 @@ export default function ProfileEditor({
     if (initialAvatarUrl) return
     const local = getLocalAvatar(userId)
     if (local) {
+      // Synchronize the browser-only avatar fallback after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAvatarUrl(local)
       setBaseAvatar(local)
       setLocalOnly(true)

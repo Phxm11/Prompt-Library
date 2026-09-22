@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import SelectMenu from '@/app/components/SelectMenu'
@@ -50,6 +50,8 @@ export default function PromptForm({
 }: PromptFormProps) {
   const router = useRouter()
   const supabase = createClient()
+  const saveId = useRef(promptId)
+  const uploadedFiles = useRef(new WeakMap<File, string>())
   const isEditMode = Boolean(promptId)
   const isDraft = initialData?.status === 'draft'
 
@@ -110,6 +112,8 @@ export default function PromptForm({
   }
 
   async function uploadFile(file: File, folder: string) {
+    const cached = uploadedFiles.current.get(file)
+    if (cached) return cached
     const ext = file.name.split('.').pop()
     const path = `${folder}/${crypto.randomUUID()}.${ext}`
     const { error: uploadError } = await supabase.storage
@@ -119,6 +123,7 @@ export default function PromptForm({
     if (uploadError) throw uploadError
 
     const { data } = supabase.storage.from('prompt-images').getPublicUrl(path)
+    uploadedFiles.current.set(file, data.publicUrl)
     return data.publicUrl
   }
 
@@ -135,6 +140,9 @@ export default function PromptForm({
 
     setSubmitting(true)
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) throw new Error('กรุณาเข้าสู่ระบบก่อนบันทึก Prompt')
+      saveId.current ??= crypto.randomUUID()
       // 1. อัปโหลดภาพหลัก (ถ้ามีการเลือกไฟล์ใหม่)
       let coverImageUrl = initialData?.cover_image_url ?? null
       if (coverFile) {
@@ -156,82 +164,20 @@ export default function PromptForm({
         is_public: intent === 'draft' ? false : isPublic,
       }
 
-      let finalPromptId = promptId
-
-      if (isEditMode) {
-        const { error: updateError } = await supabase
-          .from('prompts')
-          .update(payload)
-          .eq('prompt_id', promptId)
-        if (updateError) throw updateError
-      } else {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        if (!user) {
-          setError('กรุณาเข้าสู่ระบบก่อนเพิ่ม Prompt')
-          setSubmitting(false)
-          return
-        }
-
-        const { data: inserted, error: insertError } = await supabase
-          .from('prompts')
-          .insert({ ...payload, user_id: user.id })
-          .select('prompt_id')
-          .single()
-        if (insertError) throw insertError
-        finalPromptId = inserted.prompt_id
+      // Upload all assets first. One RPC then commits all database rows together.
+      const savedExamples = []
+      for (const item of examples) {
+        savedExamples.push({
+          example_id: item.existingId ?? null,
+          file_url: item.file ? await uploadFile(item.file, 'examples') : item.url,
+          position: item.position, zoom: item.zoom,
+        })
       }
-
-      // 2. อัปเดตความสัมพันธ์กับโมเดล AI (ลบของเดิมแล้วใส่ใหม่ทั้งหมด ง่ายและชัวร์สุด)
-      if (isEditMode) {
-        await supabase.from('prompt_ai_models').delete().eq('prompt_id', finalPromptId)
-      }
-      if (selectedModels.length > 0) {
-        const rows = selectedModels.map((ai_model_id) => ({
-          prompt_id: finalPromptId,
-          ai_model_id,
-        }))
-        const { error: modelsError } = await supabase.from('prompt_ai_models').insert(rows)
-        if (modelsError) throw modelsError
-      }
-
-      /*
-        3. ภาพตัวอย่าง — ลำดับบนหน้าจอคือลำดับจริง (sort_order = index)
-           รูปที่ถูกลบออกจากรายการ = รูปเดิมที่ไม่เหลืออยู่แล้ว ต้องลบออกจากฐานข้อมูลด้วย
-      */
-      const keptIds = new Set(examples.filter((it) => it.existingId).map((it) => it.existingId))
-      const removedIds = (initialData?.existingExamples ?? [])
-        .map((ex) => ex.example_id)
-        .filter((id) => !keptIds.has(id))
-
-      if (removedIds.length > 0) {
-        const { error: delError } = await supabase
-          .from('prompt_examples')
-          .delete()
-          .in('example_id', removedIds)
-        if (delError) throw delError
-      }
-
-      for (let i = 0; i < examples.length; i++) {
-        const item = examples[i]
-        // อัปโหลดเฉพาะรูปที่เพิ่งเลือกใหม่ รูปเดิมใช้ URL เดิมต่อได้เลย
-        const fileUrl = item.file ? await uploadFile(item.file, 'examples') : item.url
-
-        const row = {
-          file_url: fileUrl,
-          sort_order: i,
-          position: item.position,
-          zoom: item.zoom,
-        }
-
-        const { error: exError } = item.existingId
-          ? await supabase.from('prompt_examples').update(row).eq('example_id', item.existingId)
-          : await supabase.from('prompt_examples').insert({ ...row, prompt_id: finalPromptId })
-
-        if (exError) throw exError
-      }
+      const { data: finalPromptId, error: saveError } = await supabase.rpc('save_prompt', {
+        target_prompt: saveId.current, payload, model_ids: selectedModels, examples: savedExamples,
+      })
+      if (saveError) throw saveError
+      if (!finalPromptId) throw new Error('บันทึกไม่สำเร็จ กรุณาลองใหม่')
 
       // ฉบับร่างให้อยู่หน้าแก้ไขต่อ จะได้เขียนต่อได้เลย ส่วนที่เผยแพร่แล้วพาไปดูหน้าจริง
       showToast(intent === 'draft' ? 'บันทึกฉบับร่างแล้ว' : 'เผยแพร่ Prompt แล้ว')
@@ -239,8 +185,8 @@ export default function PromptForm({
         intent === 'draft' ? `/prompts/${finalPromptId}/edit` : `/prompts/${finalPromptId}`
       )
       router.refresh()
-    } catch (err: any) {
-      setError(err.message ?? 'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ กรุณาตรวจข้อมูลและสิทธิ์แล้วลองใหม่')
     } finally {
       setSubmitting(false)
     }

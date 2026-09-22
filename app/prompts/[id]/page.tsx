@@ -222,7 +222,7 @@ export default async function PromptDetailPage({
                   ใช้ได้กับโมเดล
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {prompt.prompt_ai_models.map((item: any) => (
+                  {prompt.prompt_ai_models.map((item: { ai_models: { ai_model_id: string; name: string; logo_url: string | null } }) => (
                     <span
                       key={item.ai_models.ai_model_id}
                       className="text-sm font-mono bg-surface border border-line text-ink-soft px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:border-accent/40 transition-colors"

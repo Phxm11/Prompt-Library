@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import PromptCard from '@/app/components/PromptCard'
+import type { PromptSummary } from '@/lib/promptQuery'
 import EmptyState from '@/app/components/EmptyState'
 import ErrorState from '@/app/components/ErrorState'
 import { notFound } from 'next/navigation'
@@ -53,8 +54,9 @@ export default async function AiModelDetailPage({
     .select('prompts!inner(*, categories(name), media_types(name))')
     .eq('ai_model_id', id)
     .eq('prompts.is_public', true)
+    .overrideTypes<{ prompts: PromptSummary }[], { merge: false }>()
 
-  const prompts = (rows ?? []).map((r: any) => r.prompts)
+  const prompts = (rows ?? []).map((r) => r.prompts)
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
@@ -81,7 +83,7 @@ export default async function AiModelDetailPage({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {prompts.map((prompt: any, i: number) => (
+        {prompts.map((prompt, i) => (
           <PromptCard key={prompt.prompt_id} prompt={prompt} index={i} />
         ))}
       </div>

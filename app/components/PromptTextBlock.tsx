@@ -8,12 +8,16 @@ const COLLAPSED_HEIGHT = 220 // px
 
 export default function PromptTextBlock({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false)
-  const [overflowing, setOverflowing] = useState(false)
+  const [height, setHeight] = useState(COLLAPSED_HEIGHT)
+  const overflowing = height > COLLAPSED_HEIGHT + 8
   const contentRef = useRef<HTMLParagraphElement>(null)
 
   useLayoutEffect(() => {
     const el = contentRef.current
-    if (el) setOverflowing(el.scrollHeight > COLLAPSED_HEIGHT + 8)
+    if (!el) return
+    const observer = new ResizeObserver(() => setHeight(el.scrollHeight))
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [text])
 
   return (
@@ -21,7 +25,7 @@ export default function PromptTextBlock({ text }: { text: string }) {
       <p
         ref={contentRef}
         className="text-ink-soft whitespace-pre-wrap text-sm leading-relaxed overflow-hidden transition-[max-height] duration-300 ease-in-out"
-        style={{ maxHeight: expanded ? contentRef.current?.scrollHeight ?? 'none' : COLLAPSED_HEIGHT }}
+        style={{ maxHeight: expanded ? height : COLLAPSED_HEIGHT }}
       >
         {text}
       </p>

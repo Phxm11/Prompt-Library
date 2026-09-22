@@ -50,7 +50,7 @@ export default async function AdminReviewsPage({
     query = query.or(conditions.join(','))
   }
 
-  const { data: reviews, error, count } = await query
+  const { data: reviews, error, count } = await query.overrideTypes<{ review_id: string; rating: number; comment: string | null; guest_name: string | null; created_at: string; prompts: { title: string } | null; profiles: { username: string } | null }[], { merge: false }>()
 
   return (
     <div>
@@ -65,7 +65,7 @@ export default async function AdminReviewsPage({
       </div>
 
       <div className="flex flex-col gap-2.5">
-        {reviews?.map((r: any, i: number) => (
+        {reviews?.map((r, i) => (
           <div
             key={r.review_id}
             style={{ animationDelay: `${120 + Math.min(i, 12) * 55}ms` }}

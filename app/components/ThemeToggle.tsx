@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import Icon from '@/app/components/Icon'
 
 type Theme = 'dark' | 'light'
@@ -22,21 +22,16 @@ function apply(theme: Theme) {
  * แยกออกมาเป็น hook เพราะมีที่ใช้สองแห่ง คือปุ่มบน navbar กับแถวในเมนูผู้ใช้
  * ทั้งสองที่อ่านค่าจาก data-theme บน <html> ตัวเดียวกัน จึงไม่มีทางเพี้ยนกัน
  */
+function subscribeTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange)
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+  return () => observer.disconnect()
+}
+
 export function useTheme() {
-  // ต้องตรงกับค่าเริ่มต้นที่ script ใน layout ตั้งไว้ ไม่งั้นไอคอนจะสลับผิดตอน hydrate
-  const [theme, setTheme] = useState<Theme>('light')
-
-  useEffect(() => {
-    const current = (document.documentElement.dataset.theme as Theme) ?? 'light'
-    setTheme(current)
-  }, [])
-
-  function toggle() {
-    const next: Theme = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
-    apply(next)
-  }
-
+  const theme = useSyncExternalStore(subscribeTheme,
+    () => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light', () => 'light')
+  function toggle() { apply(theme === 'dark' ? 'light' : 'dark') }
   return { theme, isDark: theme === 'dark', toggle }
 }
 

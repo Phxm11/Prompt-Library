@@ -664,6 +664,8 @@ model prompts {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model reviews {
+  is_anonymous Boolean @default(false)
+  guest_owner_hash String?
   review_id  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   prompt_id  String?   @db.Uuid
   user_id    String?   @db.Uuid

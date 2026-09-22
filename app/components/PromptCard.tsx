@@ -6,7 +6,6 @@ import LikeButton from '@/app/components/LikeButton'
 import Icon from '@/app/components/Icon'
 import { showToast } from '@/app/components/Toast'
 import { recordCopy } from '@/lib/recordCopy'
-import { getGuestId } from '@/lib/guestId'
 
 type PromptCardProps = {
   prompt: {
@@ -48,7 +47,7 @@ export default function PromptCard({ prompt, index = 0 }: PromptCardProps) {
       setTimeout(() => setCopied(false), 1500)
 
       // นับยอดด้วยกติกาเดียวกับปุ่มในหน้ารายละเอียด คือคนละ 1 ครั้ง
-      const { counted } = await recordCopy(prompt.prompt_id, getGuestId())
+      const { counted } = await recordCopy(prompt.prompt_id).catch(() => ({ counted: false }))
       if (counted) setCopyCount((prev) => (typeof prev === 'number' ? prev + 1 : prev))
     } catch (err) {
       console.error('Copy failed:', err)

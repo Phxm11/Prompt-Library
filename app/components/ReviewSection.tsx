@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, startTransition } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import StarRating from '@/app/components/StarRating'
@@ -10,39 +10,8 @@ import EmptyState from '@/app/components/EmptyState'
 import ErrorState from '@/app/components/ErrorState'
 import { checkProfanity } from '@/lib/profanity'
 
-type Review = {
-  review_id: string
-  user_id: string | null
-  guest_name: string | null
-  rating: number
-  comment: string | null
-  created_at: string
-  is_anonymous: boolean
-  profiles: { username: string; display_name: string | null; avatar_url: string | null } | null
-}
-
-const SELECT_COLUMNS =
-  'review_id, user_id, guest_name, rating, comment, created_at, is_anonymous, profiles(username, display_name, avatar_url)'
-
-// รีวิวของผู้เยี่ยมชมไม่มี user_id ผูกไว้ จึงจำ id ไว้ในเครื่องเพื่อให้ยังลบของตัวเองได้
-const GUEST_REVIEWS_KEY = 'prompt_library_my_review_ids'
-
-function getGuestReviewIds(): string[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(GUEST_REVIEWS_KEY) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-function addGuestReviewId(id: string) {
-  try {
-    localStorage.setItem(GUEST_REVIEWS_KEY, JSON.stringify([...getGuestReviewIds(), id]))
-  } catch {
-    // เขียนไม่ได้ก็ปล่อยไป แค่จะลบรีวิวตัวเองไม่ได้หลังรีเฟรช
-  }
-}
+import { listReviews, writeReview } from '@/lib/reviews'
+import type { Review } from '@/lib/reviewTypes'
 
 export default function ReviewSection({ promptId }: { promptId: string }) {
   const supabase = createClient()
@@ -51,7 +20,6 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
-  const [guestReviewIds, setGuestReviewIds] = useState<string[]>([])
 
   const [rating, setRating] = useState(0)
   const [guestName, setGuestName] = useState('')
@@ -71,35 +39,28 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    setGuestReviewIds(getGuestReviewIds())
     supabase.auth
       .getUser()
       .then((res: { data: { user: { id: string } | null } }) => setUserId(res.data.user?.id ?? null))
-    loadReviews()
+    startTransition(() => { void loadReviews() })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptId])
 
   async function loadReviews() {
     setLoading(true)
-    // เดิมโค้ดนี้ไม่เช็ค error เลย พอโหลดพัง หน้าจะเงียบแล้วโชว์ "ยังไม่มีรีวิว" ทั้งที่จริงคือโหลดไม่สำเร็จ
-    const { data, error: fetchError } = await supabase
-      .from('reviews')
-      .select(SELECT_COLUMNS)
-      .eq('prompt_id', promptId)
-      .order('created_at', { ascending: false })
-
-    if (fetchError) {
-      setLoadError(fetchError.message)
-    } else {
-      setLoadError(null)
-      setReviews((data as unknown as Review[]) ?? [])
+    try {
+      const result = await listReviews(promptId)
+      setLoadError(result.error)
+      if (!result.error) setReviews(result.reviews)
+    } catch {
+      setLoadError('เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   function canManage(review: Review) {
-    if (review.user_id) return review.user_id === userId
-    return guestReviewIds.includes(review.review_id)
+    return review.can_manage
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -122,31 +83,11 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
 
     setSubmitting(true)
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      const { data: inserted, error: insertError } = await supabase
-        .from('reviews')
-        .insert({
-          prompt_id: promptId,
-          // คงเจ้าของไว้เสมอ เพื่อให้กลับมาแก้/ลบได้ แม้เลือกไม่ระบุตัวตน
-          user_id: user?.id ?? null,
-          guest_name: user ? null : guestName.trim() || 'ผู้เยี่ยมชม',
-          is_anonymous: user ? anonymous : true,
-          rating,
-          comment: comment.trim() || null,
-        })
-        .select(SELECT_COLUMNS)
-        .single()
-
-      if (insertError) throw insertError
-
-      if (!user) {
-        addGuestReviewId(inserted.review_id)
-        setGuestReviewIds((prev) => [...prev, inserted.review_id])
-      }
-      setReviews((prev) => [inserted as unknown as Review, ...prev])
+      const result = await writeReview({
+        action: 'create', promptId, rating, comment, guestName, anonymous,
+      })
+      if (result.error) throw new Error(result.error)
+      await loadReviews()
 
       setRating(0)
       setComment('')
@@ -180,56 +121,31 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
     }
 
     setSavingEdit(true)
-    const { data, error: updateError } = await supabase
-      .from('reviews')
-      .update({
-        rating: editRating,
-        comment: editComment.trim() || null,
-        is_anonymous: editAnonymous,
-        updated_at: new Date().toISOString(),
+    try {
+      const result = await writeReview({
+        action: 'update', promptId, reviewId, rating: editRating,
+        comment: editComment, anonymous: editAnonymous,
       })
-      .eq('review_id', reviewId)
-      .select(SELECT_COLUMNS)
-    setSavingEdit(false)
-
-    if (updateError) {
-      showToast(`แก้ไขไม่สำเร็จ: ${updateError.message}`, 'error')
-      return
-    }
-    // RLS ที่ปฏิเสธจะคืน 0 แถวโดยไม่มี error ต้องเช็คจำนวนแถวเองเสมอ
-    if (!data || data.length === 0) {
-      showToast('แก้ไขไม่สำเร็จ: ไม่มีสิทธิ์แก้รีวิวนี้', 'error')
-      return
-    }
-
-    setReviews((prev) =>
-      prev.map((r) => (r.review_id === reviewId ? (data[0] as unknown as Review) : r))
-    )
-    setEditingId(null)
-    showToast('แก้ไขรีวิวแล้ว')
+      if (result.error) { showToast(result.error, 'error'); return }
+      await loadReviews()
+      setEditingId(null)
+      showToast('แก้ไขรีวิวแล้ว')
+    } catch {
+      showToast('เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่', 'error')
+    } finally { setSavingEdit(false) }
   }
 
   async function handleDelete(reviewId: string) {
     setDeleting(true)
-    const { data, error: deleteError } = await supabase
-      .from('reviews')
-      .delete()
-      .eq('review_id', reviewId)
-      .select('review_id')
-    setDeleting(false)
-
-    if (deleteError) {
-      showToast(`ลบไม่สำเร็จ: ${deleteError.message}`, 'error')
-      return
-    }
-    if (!data || data.length === 0) {
-      showToast('ลบไม่สำเร็จ: ไม่มีสิทธิ์ลบรีวิวนี้', 'error')
-      return
-    }
-
-    setReviews((prev) => prev.filter((r) => r.review_id !== reviewId))
-    setAskDeleteId(null)
-    showToast('ลบรีวิวแล้ว')
+    try {
+      const result = await writeReview({ action: 'delete', promptId, reviewId })
+      if (result.error) { showToast(result.error, 'error'); return }
+      setReviews((prev) => prev.filter((r) => r.review_id !== reviewId))
+      setAskDeleteId(null)
+      showToast('ลบรีวิวแล้ว')
+    } catch {
+      showToast('เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่', 'error')
+    } finally { setDeleting(false) }
   }
 
   const inputClass =
@@ -279,6 +195,7 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
           onChange={(e) => setComment(e.target.value)}
           placeholder="เขียนความคิดเห็นเกี่ยวกับ prompt นี้..."
           rows={3}
+          maxLength={5000}
           className={`${inputClass} resize-none`}
         />
 
@@ -309,7 +226,12 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
       {/* รายการรีวิว */}
       {loading && <p className="text-faint font-mono text-sm">กำลังโหลด...</p>}
 
-      {!loading && loadError && <ErrorState message={loadError} className="my-4" />}
+      {!loading && loadError && (
+        <div className="my-4 space-y-2">
+          <ErrorState message={loadError} />
+          <button onClick={() => startTransition(() => { void loadReviews() })} className="text-accent underline">ลองใหม่</button>
+        </div>
+      )}
 
       {!loading && !loadError && reviews.length === 0 && (
         <EmptyState
@@ -423,7 +345,7 @@ export default function ReviewSection({ promptId }: { promptId: string }) {
                     className={`${inputClass} resize-none`}
                     placeholder="เขียนความคิดเห็น..."
                   />
-                  {review.user_id && (
+                  {review.is_member && (
                     <label className="flex w-fit cursor-pointer items-center gap-2.5">
                       <input
                         type="checkbox"

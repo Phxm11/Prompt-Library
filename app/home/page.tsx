@@ -3,7 +3,7 @@ import PromptFilters from '@/app/components/PromptFilters'
 import PromptInfiniteGrid from '@/app/components/PromptInfiniteGrid'
 import ErrorState from '@/app/components/ErrorState'
 
-const PAGE_SIZE = 12
+import { PAGE_SIZE, promptPageQuery } from '@/lib/promptQuery'
 
 export default async function BrowsePromptsPage({
   searchParams,
@@ -38,23 +38,9 @@ export default async function BrowsePromptsPage({
     : null
   const aiModelId = ai_model ?? null
 
-  // Server ดึงแค่ category + media_type เท่านั้น (เร็ว ไม่ซับซ้อน)
-  // ถ้ามีการกรองด้วยโมเดล AI ด้วย จะให้ PromptInfiniteGrid ไป fetch ซ้ำ
-  // ฝั่ง client อีกทีตอน mount แทน (ดู logic ใน component นั้น)
-  let query = supabase
-    .from('prompts')
-    .select('*, categories(name), media_types(name)', { count: 'exact' })
-    .eq('is_public', true)
-    .order('created_at', { ascending: false })
-    .order('prompt_id', { ascending: true })
-    .range(0, PAGE_SIZE - 1)
-
-  if (categoryId) query = query.eq('category_id', categoryId)
-  if (mediaTypeId) query = query.eq('media_type_id', mediaTypeId)
-
-  const { data: prompts, count, error } = await query
-
-  const hasMore = (count ?? 0) > PAGE_SIZE
+  const { data, error } = await promptPageQuery(supabase, { categoryId, mediaTypeId, aiModelId })
+  const prompts = (data ?? []).slice(0, PAGE_SIZE)
+  const hasMore = (data ?? []).length > PAGE_SIZE
   const filterKey = `${categoryId ?? 'all'}-${mediaTypeId ?? 'all'}-${aiModelId ?? 'all'}`
 
   return (
